@@ -83,7 +83,8 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         const image = new Image();
         image.onload = () => resolve(image);
-        image.onerror = reject;
+        image.onerror = (ev) =>
+            reject(new Error(`loadImage: failed to load image (${(ev as Event).type ?? ev})`));
         image.src = src;
     });
 }
@@ -99,6 +100,11 @@ export async function renderELA(
     amplification: number,
 ): Promise<number> {
     const { naturalWidth: w, naturalHeight: h } = img;
+    if (w === 0 || h === 0) {
+        throw new Error(
+            'renderELA: image has zero dimensions – ensure img is fully loaded before calling',
+        );
+    }
 
     // Step 1: Capture original ImageData
     const tmp = document.createElement('canvas');
