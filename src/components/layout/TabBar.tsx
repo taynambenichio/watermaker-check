@@ -15,12 +15,18 @@ interface TabBarProps {
 
 export function TabBar({ activeTab, onTabChange }: TabBarProps) {
     return (
-        <nav className="h-9 shrink-0 flex border-b border-border bg-bg-1 px-2 gap-0.5 items-end">
+        <div
+            role="tablist"
+            aria-label="Painéis de análise"
+            className="h-9 shrink-0 flex border-b border-border bg-bg-1 px-2 gap-0.5 items-end"
+        >
             {TABS.map(({ id, label }) => {
                 const active = activeTab === id;
                 return (
                     <button
                         type="button"
+                        role="tab"
+                        aria-selected={active}
                         key={id}
                         onClick={() => onTabChange(id)}
                         className={[
@@ -34,6 +40,6 @@ export function TabBar({ activeTab, onTabChange }: TabBarProps) {
                     </button>
                 );
             })}
-        </nav>
+        </div>
     );
 }

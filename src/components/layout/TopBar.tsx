@@ -36,9 +36,19 @@ export function TopBar({ state, onReanalyze }: TopBarProps) {
 
             {/* Status dot */}
             <div
+                role="status"
+                aria-live="polite"
                 className="w-1.5 h-1.5 rounded-full shrink-0 transition-colors"
                 style={{ background: statusColor }}
-                title={isAnalyzing ? 'A analisar…' : imageElement ? 'Pronto' : 'Sem imagem'}
+                aria-label={
+                    isAnalyzing
+                        ? 'A analisar…'
+                        : !imageElement
+                          ? 'Sem imagem'
+                          : !forensicResult
+                            ? 'Erro de análise'
+                            : 'Pronto'
+                }
             />
 
             {/* File info */}
