@@ -26,11 +26,12 @@ export function computeExifScore(flags: ExifFlag[]): number {
     return Math.min(100, total);
 }
 
-export async function analyzeExif(img: HTMLImageElement): Promise<ExifResult> {
+export async function analyzeExif(source: HTMLImageElement | File): Promise<ExifResult> {
     let raw: Record<string, unknown> | null = null;
 
     try {
-        raw = (await exifr.parse(img.src, {
+        const input = source instanceof File ? source : source.src;
+        raw = (await exifr.parse(input, {
             pick: ['Make', 'Model', 'Software', 'DateTime', 'DateTimeOriginal', 'GPSLatitude'],
         })) as Record<string, unknown> | null;
     } catch {

@@ -1,3 +1,4 @@
+import heic2any from 'heic2any';
 import { renderNoiseMap } from './forensics/noise.js';
 import type { AppState, ForensicPipelineResult } from './types.js';
 
@@ -36,14 +37,36 @@ export function initUpload(state: AppState, onImageLoaded: (img: HTMLImageElemen
         }
     }
 
-    function loadFile(file: File): void {
-        if (!file.type.startsWith('image/')) return;
-        const reader = new FileReader();
-        reader.onload = (e: ProgressEvent<FileReader>): void => {
-            const result = e.target?.result;
-            if (typeof result === 'string') loadSrc(result);
-        };
-        reader.readAsDataURL(file);
+    function isHeic(file: File): boolean {
+        return (
+            file.type === 'image/heic' ||
+            file.type === 'image/heif' ||
+            /\.(heic|heif)$/i.test(file.name)
+        );
+    }
+
+    async function loadFile(file: File): Promise<void> {
+        const heic = isHeic(file);
+        if (!heic && !file.type.startsWith('image/')) return;
+        state.sourceFile = file;
+        if (heic) {
+            const btn = document.getElementById('selectFileBtn') as HTMLButtonElement | null;
+            if (btn) btn.textContent = 'A converter HEIC…';
+            try {
+                const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+                const single = Array.isArray(blob) ? blob[0] : blob;
+                loadSrc(URL.createObjectURL(single));
+            } finally {
+                if (btn) btn.textContent = 'Selecionar Arquivo';
+            }
+        } else {
+            const reader = new FileReader();
+            reader.onload = (e: ProgressEvent<FileReader>): void => {
+                const result = e.target?.result;
+                if (typeof result === 'string') loadSrc(result);
+            };
+            reader.readAsDataURL(file);
+        }
     }
 
     (document.getElementById('selectFileBtn') as HTMLButtonElement).addEventListener('click', () =>

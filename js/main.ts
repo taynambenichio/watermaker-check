@@ -14,6 +14,7 @@ import {
 
 export const state: AppState = {
     image: null,
+    sourceFile: null,
     zoom: 1.0,
     activePreset: null,
     activeCanvasMode: null,
@@ -316,10 +317,14 @@ function startForensicsAnalysis(img: HTMLImageElement): void {
         report: 95,
     };
 
-    runForensicPipeline(img, (step, status) => {
-        if (status === 'running')
-            updateForensicsProgress(step, STEP_PCT[step] ?? 50, STEP_LABELS[step] ?? '…');
-    })
+    runForensicPipeline(
+        img,
+        (step, status) => {
+            if (status === 'running')
+                updateForensicsProgress(step, STEP_PCT[step] ?? 50, STEP_LABELS[step] ?? '…');
+        },
+        state.sourceFile,
+    )
         .then((result) => {
             state.forensicResult = result;
             state.ghostLevelIndex = 0;

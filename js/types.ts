@@ -1,6 +1,7 @@
 // ── Existing ──────────────────────────────────────────────────────────────
 export interface AppState {
     image: HTMLImageElement | null;
+    sourceFile: File | null;
     zoom: number;
     activePreset: string | null;
     activeCanvasMode: 'histogram' | 'sobel' | 'amplify' | 'ela' | null;

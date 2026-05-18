@@ -8,6 +8,7 @@ import { buildReport } from './report.js';
 export async function runForensicPipeline(
     img: HTMLImageElement,
     onProgress?: PipelineProgressCallback,
+    sourceFile?: File | null,
 ): Promise<ForensicPipelineResult> {
     const { naturalWidth: w, naturalHeight: h } = img;
 
@@ -24,7 +25,7 @@ export async function runForensicPipeline(
     onProgress?.('noise', 'running');
 
     const [exif, noise] = await Promise.all([
-        analyzeExif(img).then((r) => {
+        analyzeExif(sourceFile ?? img).then((r) => {
             onProgress?.('exif', 'done');
             return r;
         }),
