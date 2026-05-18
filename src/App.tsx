@@ -1,8 +1,8 @@
 import { type ChangeEvent, useCallback, useEffect, useReducer, useRef } from 'react';
 import { DocPane } from './components/DocPane.tsx';
-import { ForensicsContent } from './components/forensics/ForensicsContent.tsx';
 import { TabBar } from './components/layout/TabBar.tsx';
 import { TopBar } from './components/layout/TopBar.tsx';
+import { RightPanel } from './components/RightPanel.tsx';
 import { useForensics } from './hooks/useForensics.ts';
 import { useImageLoader } from './hooks/useImageLoader.ts';
 import { appReducer, initialAppState } from './types.ts';
@@ -68,15 +68,12 @@ export default function App() {
                     fileInputRef={fileInputRef}
                     onFileInputChange={handleFileInputChange}
                 />
-                <aside className="flex w-[360px] shrink-0 flex-col overflow-hidden border-l border-border bg-bg-1">
-                    {state.activeTab === 'forensics' ? (
-                        <ForensicsContent state={state} dispatch={dispatch} />
-                    ) : (
-                        <div className="flex h-full items-center justify-center px-6 text-center text-sm text-text-3">
-                            Painel disponível nas próximas tarefas
-                        </div>
-                    )}
-                </aside>
+                <RightPanel
+                    state={state}
+                    dispatch={dispatch}
+                    imageRef={imageRef}
+                    overlayCanvasRef={overlayCanvasRef}
+                />
             </main>
         </div>
     );

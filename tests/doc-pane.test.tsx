@@ -60,4 +60,70 @@ describe('DocPane', () => {
         expect(html).toContain('aria-valuemax="100"');
         expect(html).toContain('aria-valuenow="50"');
     });
+
+    it('mostra o canvas de overlay para modos sobel e amplify', () => {
+        const imageElement = {
+            src: 'example.png',
+            naturalWidth: 1200,
+            naturalHeight: 800,
+        } as HTMLImageElement;
+
+        const sobelHtml = renderToStaticMarkup(
+            <DocPane
+                state={{
+                    ...initialAppState,
+                    imageElement,
+                    canvasMode: 'sobel',
+                }}
+                dispatch={() => {}}
+                imageRef={{ current: null }}
+                overlayCanvasRef={{ current: null }}
+                onFileDrop={async () => {}}
+                onSampleLoad={() => {}}
+                onFileSelect={() => {}}
+                fileInputRef={{ current: null }}
+                onFileInputChange={() => {}}
+            />,
+        );
+
+        const amplifyHtml = renderToStaticMarkup(
+            <DocPane
+                state={{
+                    ...initialAppState,
+                    imageElement,
+                    canvasMode: 'amplify',
+                }}
+                dispatch={() => {}}
+                imageRef={{ current: null }}
+                overlayCanvasRef={{ current: null }}
+                onFileDrop={async () => {}}
+                onSampleLoad={() => {}}
+                onFileSelect={() => {}}
+                fileInputRef={{ current: null }}
+                onFileInputChange={() => {}}
+            />,
+        );
+
+        const histogramHtml = renderToStaticMarkup(
+            <DocPane
+                state={{
+                    ...initialAppState,
+                    imageElement,
+                    canvasMode: 'histogram',
+                }}
+                dispatch={() => {}}
+                imageRef={{ current: null }}
+                overlayCanvasRef={{ current: null }}
+                onFileDrop={async () => {}}
+                onSampleLoad={() => {}}
+                onFileSelect={() => {}}
+                fileInputRef={{ current: null }}
+                onFileInputChange={() => {}}
+            />,
+        );
+
+        expect(sobelHtml).toContain('style="display:block"');
+        expect(amplifyHtml).toContain('style="display:block"');
+        expect(histogramHtml).toContain('style="display:none"');
+    });
 });

@@ -231,7 +231,12 @@ export function DocPane({
                 <canvas
                     ref={overlayCanvasRef}
                     className="absolute inset-0 w-full h-full object-contain z-3 pointer-events-none"
-                    style={{ display: 'none' }}
+                    style={{
+                        display:
+                            state.canvasMode === 'sobel' || state.canvasMode === 'amplify'
+                                ? 'block'
+                                : 'none',
+                    }}
                 />
 
                 {/* Before/After divider */}
