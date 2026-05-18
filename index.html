@@ -4,329 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detector de Marcas d'Água - Análise Visual</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            min-height: 100vh;
-            color: white;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 30px;
-            margin-bottom: 30px;
-        }
-
-        .image-container {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .image-display {
-            position: relative;
-            width: 100%;
-            height: 600px;
-            border: 2px dashed rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            background: #000;
-        }
-
-        .image-display img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            transition: all 0.3s ease;
-        }
-
-        .upload-area {
-            text-align: center;
-            padding: 40px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .upload-area i {
-            font-size: 4em;
-            margin-bottom: 20px;
-            opacity: 0.5;
-        }
-
-        .file-input {
-            display: none;
-        }
-
-        .upload-btn {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1em;
-            margin: 10px 5px;
-            transition: all 0.3s ease;
-        }
-
-        .upload-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        .controls-panel {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 25px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            height: fit-content;
-        }
-
-        .controls-panel h3 {
-            margin-bottom: 20px;
-            text-align: center;
-            font-size: 1.3em;
-        }
-
-        .control-group {
-            margin-bottom: 25px;
-        }
-
-        .control-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            font-size: 0.95em;
-        }
-
-        .slider {
-            width: 100%;
-            height: 6px;
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.2);
-            outline: none;
-            -webkit-appearance: none;
-            margin-bottom: 10px;
-        }
-
-        .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
-
-        .slider::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            cursor: pointer;
-            border: none;
-        }
-
-        .value-display {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.85em;
-            text-align: center;
-            min-width: 50px;
-        }
-
-        .preset-filters {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .preset-btn {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9em;
-        }
-
-        .preset-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-1px);
-        }
-
-        .preset-btn.active {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            border-color: transparent;
-        }
-
-        .analysis-info {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            margin-top: 20px;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .info-card {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        .info-card h4 {
-            color: #64b5f6;
-            margin-bottom: 8px;
-        }
-
-        .info-card p {
-            font-size: 0.9em;
-            opacity: 0.8;
-        }
-
-        .reset-btn {
-            width: 100%;
-            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1em;
-            margin-top: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .reset-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        @media (max-width: 1024px) {
-            .main-content {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-            
-            .controls-panel {
-                order: -1;
-            }
-            
-            .preset-filters {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-            
-            .header h1 {
-                font-size: 2em;
-            }
-            
-            .image-display {
-                height: 400px;
-            }
-            
-            .preset-filters {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 10px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-
-        .tooltip::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.8em;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-            z-index: 1000;
-        }
-
-        .tooltip:hover::after {
-            opacity: 1;
-        }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <div class="container">
@@ -338,78 +16,115 @@
         <div class="main-content">
             <div class="image-container">
                 <div class="image-display" id="imageDisplay">
-                    <div class="upload-area">
+                    <div class="upload-area" id="uploadArea">
                         <div style="font-size: 4em; margin-bottom: 20px;">📄</div>
                         <h3>Carregar Documento</h3>
                         <p>Arraste uma imagem aqui ou clique para selecionar</p>
                         <input type="file" id="fileInput" class="file-input" accept="image/*">
-                        <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
-                            Selecionar Arquivo
-                        </button>
-                        <button class="upload-btn" onclick="loadSampleImage()">
-                            Usar Imagem de Exemplo
-                        </button>
+                        <button class="upload-btn" id="selectFileBtn">Selecionar Arquivo</button>
+                        <button class="upload-btn" id="sampleImageBtn">Usar Imagem de Exemplo</button>
+                    </div>
+                    <img id="currentImage" alt="" style="display:none; max-width:100%; max-height:100%; object-fit:contain; position:relative; z-index:1;">
+                    <img id="beforeImage" alt="">
+                    <canvas id="canvasOverlay"></canvas>
+                    <div id="beforeAfterDivider">
+                        <div class="divider-line"></div>
+                        <div class="divider-handle">↔</div>
                     </div>
                 </div>
             </div>
 
             <div class="controls-panel">
-                <h3>⚙️ Controles de Análise</h3>
-                
-                <div class="control-group">
-                    <label class="tooltip" data-tooltip="Ajusta o brilho da imagem para revelar marcas ocultas">
-                        💡 Brilho: <span class="value-display" id="brightnessValue">100%</span>
-                    </label>
-                    <input type="range" class="slider" id="brightness" min="0" max="300" value="100">
+                <div class="tab-nav">
+                    <button class="tab-btn active" data-tab="filters">🎚 Filtros</button>
+                    <button class="tab-btn" data-tab="canvas">🔬 Canvas</button>
+                    <button class="tab-btn" data-tab="tools">🛠 Tools</button>
                 </div>
 
-                <div class="control-group">
-                    <label class="tooltip" data-tooltip="Aumenta o contraste para destacar elementos de segurança">
-                        🌓 Contraste: <span class="value-display" id="contrastValue">100%</span>
-                    </label>
-                    <input type="range" class="slider" id="contrast" min="0" max="300" value="100">
+                <!-- Tab: Filtros CSS -->
+                <div class="tab-content active" data-tab="filters">
+                    <div class="control-group">
+                        <label class="tooltip" data-tooltip="Ajusta o brilho da imagem para revelar marcas ocultas">
+                            💡 Brilho: <span class="value-display" id="brightnessValue">100%</span>
+                        </label>
+                        <input type="range" class="slider" id="brightness" min="0" max="300" value="100">
+                    </div>
+                    <div class="control-group">
+                        <label class="tooltip" data-tooltip="Aumenta o contraste para destacar elementos de segurança">
+                            🌓 Contraste: <span class="value-display" id="contrastValue">100%</span>
+                        </label>
+                        <input type="range" class="slider" id="contrast" min="0" max="300" value="100">
+                    </div>
+                    <div class="control-group">
+                        <label class="tooltip" data-tooltip="Ajusta a saturação das cores">
+                            🎨 Saturação: <span class="value-display" id="saturationValue">100%</span>
+                        </label>
+                        <input type="range" class="slider" id="saturation" min="0" max="300" value="100">
+                    </div>
+                    <div class="control-group">
+                        <label class="tooltip" data-tooltip="Rotaciona o matiz das cores para revelar diferentes camadas">
+                            🌈 Matiz: <span class="value-display" id="hueValue">0°</span>
+                        </label>
+                        <input type="range" class="slider" id="hue" min="0" max="360" value="0">
+                    </div>
+                    <div class="control-group">
+                        <label class="tooltip" data-tooltip="Inverte as cores para análise de marcas d'água">
+                            🔄 Inversão: <span class="value-display" id="invertValue">0%</span>
+                        </label>
+                        <input type="range" class="slider" id="invert" min="0" max="100" value="0">
+                    </div>
+                    <div class="control-group">
+                        <label class="tooltip" data-tooltip="Aplica desfoque para suavizar a imagem">
+                            🌫️ Desfoque: <span class="value-display" id="blurValue">0px</span>
+                        </label>
+                        <input type="range" class="slider" id="blur" min="0" max="20" value="0">
+                    </div>
+                    <h3>🎯 Filtros Predefinidos</h3>
+                    <div class="preset-filters">
+                        <button class="preset-btn" data-preset="uv">💜 Luz UV</button>
+                        <button class="preset-btn" data-preset="infrared">🔴 Infravermelho</button>
+                        <button class="preset-btn" data-preset="watermark">💧 Marca d'Água</button>
+                        <button class="preset-btn" data-preset="security">🔒 Segurança</button>
+                        <button class="preset-btn" data-preset="edges">📐 Bordas</button>
+                        <button class="preset-btn" data-preset="negative">📸 Negativo</button>
+                    </div>
+                    <button class="reset-btn" id="resetBtn">🔄 Restaurar Original</button>
                 </div>
 
-                <div class="control-group">
-                    <label class="tooltip" data-tooltip="Ajusta a saturação das cores">
-                        🎨 Saturação: <span class="value-display" id="saturationValue">100%</span>
-                    </label>
-                    <input type="range" class="slider" id="saturation" min="0" max="300" value="100">
+                <!-- Tab: Análise Canvas -->
+                <div class="tab-content" data-tab="canvas">
+                    <p class="tab-description">Processamento real de pixels via Canvas API</p>
+                    <div class="canvas-controls">
+                        <button class="canvas-btn" id="histogramBtn" disabled>📊 Histograma RGB</button>
+                        <button class="canvas-btn" id="sobelBtn" disabled>📐 Bordas (Sobel)</button>
+                        <button class="canvas-btn" id="amplifyBtn" disabled>🔍 Amplificar Diferenças</button>
+                        <button class="canvas-btn secondary" id="clearCanvasBtn" disabled>✕ Limpar Canvas</button>
+                    </div>
                 </div>
 
-                <div class="control-group">
-                    <label class="tooltip" data-tooltip="Rotaciona o matiz das cores para revelar diferentes camadas">
-                        🌈 Matiz: <span class="value-display" id="hueValue">0°</span>
-                    </label>
-                    <input type="range" class="slider" id="hue" min="0" max="360" value="0">
+                <!-- Tab: Ferramentas -->
+                <div class="tab-content" data-tab="tools">
+                    <div class="tool-group">
+                        <label>🔍 Zoom: <span id="zoomValue">100%</span></label>
+                        <div class="zoom-controls">
+                            <button class="tool-btn" id="zoomOutBtn" disabled>−</button>
+                            <button class="tool-btn" id="zoomResetBtn" disabled>↺</button>
+                            <button class="tool-btn" id="zoomInBtn" disabled>+</button>
+                        </div>
+                    </div>
+                    <div class="tool-group">
+                        <button class="tool-btn wide" id="beforeAfterBtn" disabled>↔ Antes / Depois</button>
+                    </div>
+                    <div class="tool-group">
+                        <button class="tool-btn wide" id="exportBtn" disabled>💾 Exportar PNG</button>
+                    </div>
                 </div>
-
-                <div class="control-group">
-                    <label class="tooltip" data-tooltip="Inverte as cores para análise de marcas d'água">
-                        🔄 Inversão: <span class="value-display" id="invertValue">0%</span>
-                    </label>
-                    <input type="range" class="slider" id="invert" min="0" max="100" value="0">
-                </div>
-
-                <div class="control-group">
-                    <label class="tooltip" data-tooltip="Aplica desfoque para suavizar a imagem">
-                        🌫️ Desfoque: <span class="value-display" id="blurValue">0px</span>
-                    </label>
-                    <input type="range" class="slider" id="blur" min="0" max="20" value="0">
-                </div>
-
-                <h3>🎯 Filtros Predefinidos</h3>
-                <div class="preset-filters">
-                    <button class="preset-btn" onclick="applyPreset('uv')">💜 Luz UV</button>
-                    <button class="preset-btn" onclick="applyPreset('infrared')">🔴 Infravermelho</button>
-                    <button class="preset-btn" onclick="applyPreset('watermark')">💧 Marca d'Água</button>
-                    <button class="preset-btn" onclick="applyPreset('security')">🔒 Segurança</button>
-                    <button class="preset-btn" onclick="applyPreset('edges')">📐 Bordas</button>
-                    <button class="preset-btn" onclick="applyPreset('negative')">📸 Negativo</button>
-                </div>
-
-                <button class="reset-btn" onclick="resetFilters()">🔄 Restaurar Original</button>
             </div>
+        </div>
+
+        <div id="histogramContainer" class="histogram-container" style="display:none">
+            <h4>📊 Histograma RGB</h4>
+            <canvas id="histogramCanvas" width="256" height="100"></canvas>
         </div>
 
         <div class="analysis-info">
@@ -435,288 +150,6 @@
         </div>
     </div>
 
-    <script>
-        let currentImage = null;
-        let activePreset = null;
-
-        // Elementos DOM
-        const fileInput = document.getElementById('fileInput');
-        const imageDisplay = document.getElementById('imageDisplay');
-        const sliders = {
-            brightness: document.getElementById('brightness'),
-            contrast: document.getElementById('contrast'),
-            saturation: document.getElementById('saturation'),
-            hue: document.getElementById('hue'),
-            invert: document.getElementById('invert'),
-            blur: document.getElementById('blur')
-        };
-
-        // Valores dos displays
-        const valueDisplays = {
-            brightness: document.getElementById('brightnessValue'),
-            contrast: document.getElementById('contrastValue'),
-            saturation: document.getElementById('saturationValue'),
-            hue: document.getElementById('hueValue'),
-            invert: document.getElementById('invertValue'),
-            blur: document.getElementById('blurValue')
-        };
-
-        // Elementos de informação
-        const activeTechnique = document.getElementById('activeTechnique');
-        const processingLevel = document.getElementById('processingLevel');
-        const recommendation = document.getElementById('recommendation');
-
-        // Event listeners para os sliders
-        Object.keys(sliders).forEach(key => {
-            sliders[key].addEventListener('input', function() {
-                updateFilter();
-                updateDisplay(key, this.value);
-                updateAnalysisInfo();
-            });
-        });
-
-        // Event listener para upload de arquivo
-        fileInput.addEventListener('change', handleFileUpload);
-
-        // Drag and drop
-        imageDisplay.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            imageDisplay.style.borderColor = '#667eea';
-        });
-
-        imageDisplay.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            imageDisplay.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-        });
-
-        imageDisplay.addEventListener('drop', (e) => {
-            e.preventDefault();
-            imageDisplay.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                displayImage(files[0]);
-            }
-        });
-
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
-                displayImage(file);
-            }
-        }
-
-        function displayImage(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.style.maxWidth = '100%';
-                img.style.maxHeight = '100%';
-                img.style.objectFit = 'contain';
-                
-                imageDisplay.innerHTML = '';
-                imageDisplay.appendChild(img);
-                currentImage = img;
-                
-                // Aplicar filtros atuais
-                updateFilter();
-                updateAnalysisInfo();
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function loadSampleImage() {
-            const img = document.createElement('img');
-            img.src = 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/e396429c-4ae9-49d6-8f02-6dbd2d041043.png';
-            img.alt = 'Exemplo de documento de identidade com elementos de segurança ocultos incluindo marcas d água hologramas e microtextos visíveis apenas com técnicas especiais de análise visual';
-            img.style.maxWidth = '100%';
-            img.style.maxHeight = '100%';
-            img.style.objectFit = 'contain';
-            
-            imageDisplay.innerHTML = '';
-            imageDisplay.appendChild(img);
-            currentImage = img;
-            
-            updateFilter();
-            updateAnalysisInfo();
-        }
-
-        function updateFilter() {
-            if (!currentImage) return;
-
-            const filters = [];
-            
-            const brightness = sliders.brightness.value;
-            const contrast = sliders.contrast.value;
-            const saturation = sliders.saturation.value;
-            const hue = sliders.hue.value;
-            const invert = sliders.invert.value;
-            const blur = sliders.blur.value;
-
-            filters.push(`brightness(${brightness}%)`);
-            filters.push(`contrast(${contrast}%)`);
-            filters.push(`saturate(${saturation}%)`);
-            filters.push(`hue-rotate(${hue}deg)`);
-            filters.push(`invert(${invert}%)`);
-            filters.push(`blur(${blur}px)`);
-
-            currentImage.style.filter = filters.join(' ');
-        }
-
-        function updateDisplay(key, value) {
-            const unit = key === 'hue' ? '°' : key === 'blur' ? 'px' : '%';
-            valueDisplays[key].textContent = value + unit;
-        }
-
-        function applyPreset(preset) {
-            // Reset active preset buttons
-            document.querySelectorAll('.preset-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Set active button
-            event.target.classList.add('active');
-            activePreset = preset;
-
-            const presets = {
-                'uv': {
-                    brightness: 150,
-                    contrast: 200,
-                    saturation: 50,
-                    hue: 280,
-                    invert: 0,
-                    blur: 0
-                },
-                'infrared': {
-                    brightness: 120,
-                    contrast: 180,
-                    saturation: 0,
-                    hue: 0,
-                    invert: 30,
-                    blur: 1
-                },
-                'watermark': {
-                    brightness: 80,
-                    contrast: 250,
-                    saturation: 200,
-                    hue: 0,
-                    invert: 0,
-                    blur: 0
-                },
-                'security': {
-                    brightness: 200,
-                    contrast: 300,
-                    saturation: 150,
-                    hue: 45,
-                    invert: 0,
-                    blur: 0
-                },
-                'edges': {
-                    brightness: 50,
-                    contrast: 300,
-                    saturation: 0,
-                    hue: 0,
-                    invert: 50,
-                    blur: 0
-                },
-                'negative': {
-                    brightness: 120,
-                    contrast: 120,
-                    saturation: 120,
-                    hue: 180,
-                    invert: 100,
-                    blur: 0
-                }
-            };
-
-            const settings = presets[preset];
-            if (settings) {
-                Object.keys(settings).forEach(key => {
-                    sliders[key].value = settings[key];
-                    updateDisplay(key, settings[key]);
-                });
-                updateFilter();
-                updateAnalysisInfo();
-            }
-        }
-
-        function resetFilters() {
-            // Reset all sliders to default values
-            sliders.brightness.value = 100;
-            sliders.contrast.value = 100;
-            sliders.saturation.value = 100;
-            sliders.hue.value = 0;
-            sliders.invert.value = 0;
-            sliders.blur.value = 0;
-
-            // Update displays
-            Object.keys(sliders).forEach(key => {
-                updateDisplay(key, sliders[key].value);
-            });
-
-            // Reset active preset
-            document.querySelectorAll('.preset-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            activePreset = null;
-
-            updateFilter();
-            updateAnalysisInfo();
-        }
-
-        function updateAnalysisInfo() {
-            if (!currentImage) {
-                activeTechnique.textContent = 'Nenhuma imagem carregada';
-                processingLevel.textContent = 'N/A';
-                recommendation.textContent = 'Carregue uma imagem para iniciar';
-                return;
-            }
-
-            // Determine active technique
-            let technique = 'Ajustes manuais';
-            if (activePreset) {
-                const techniques = {
-                    'uv': 'Simulação de Luz UV',
-                    'infrared': 'Filtro Infravermelho',
-                    'watermark': 'Detecção de Marca d\'Água',
-                    'security': 'Análise de Segurança',
-                    'edges': 'Detecção de Bordas',
-                    'negative': 'Imagem Negativa'
-                };
-                technique = techniques[activePreset] || 'Filtro Personalizado';
-            }
-            activeTechnique.textContent = technique;
-
-            // Calculate processing level
-            const brightness = parseInt(sliders.brightness.value);
-            const contrast = parseInt(sliders.contrast.value);
-            const saturation = parseInt(sliders.saturation.value);
-            const hue = parseInt(sliders.hue.value);
-            const invert = parseInt(sliders.invert.value);
-            const blur = parseInt(sliders.blur.value);
-
-            const totalAdjustment = Math.abs(brightness - 100) + Math.abs(contrast - 100) + 
-                                  Math.abs(saturation - 100) + hue + invert + blur * 10;
-
-            let level = 'Baixo';
-            if (totalAdjustment > 200) level = 'Alto';
-            else if (totalAdjustment > 100) level = 'Médio';
-            
-            processingLevel.textContent = level;
-
-            // Generate recommendation
-            let rec = 'Ajuste os controles para revelar elementos ocultos';
-            if (activePreset === 'uv') rec = 'Ideal para detectar tintas fluorescentes';
-            else if (activePreset === 'watermark') rec = 'Optimize contraste para marcas d\'água';
-            else if (activePreset === 'security') rec = 'Configuração para elementos de segurança';
-            else if (totalAdjustment > 150) rec = 'Processamento intenso aplicado';
-            
-            recommendation.textContent = rec;
-        }
-
-        // Initialize
-        updateAnalysisInfo();
-    </script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
-
