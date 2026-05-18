@@ -78,3 +78,55 @@ export function computeELA(
         score,
     };
 }
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = src;
+    });
+}
+
+/**
+ * Canvas-level orchestrator. Calls computeELA and renders the result.
+ * @returns Suspicion score 0–100.
+ * @throws SecurityError if the image is cross-origin.
+ */
+export async function renderELA(
+    img: HTMLImageElement,
+    outputCanvas: HTMLCanvasElement,
+    amplification: number,
+): Promise<number> {
+    const { naturalWidth: w, naturalHeight: h } = img;
+
+    // Step 1: Capture original ImageData
+    const tmp = document.createElement('canvas');
+    tmp.width = w;
+    tmp.height = h;
+    const ctx = tmp.getContext('2d')!;
+    ctx.drawImage(img, 0, 0);
+    const originalData = ctx.getImageData(0, 0, w, h);
+
+    // Step 2: Recompress at JPEG q=95
+    const jpegUrl = tmp.toDataURL('image/jpeg', 0.95);
+    const recompImg = await loadImage(jpegUrl);
+
+    // Step 3: Capture recompressed ImageData (reuse same temp canvas)
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(recompImg, 0, 0);
+    const recompData = ctx.getImageData(0, 0, w, h);
+
+    // Step 4: Compute ELA
+    const { imageData, score } = computeELA(originalData, recompData, amplification);
+
+    // Step 5: Paint heatmap to output canvas
+    outputCanvas.width = w;
+    outputCanvas.height = h;
+    const outCtx = outputCanvas.getContext('2d')!;
+    const outImageData = outCtx.createImageData(w, h);
+    outImageData.data.set(imageData.data);
+    outCtx.putImageData(outImageData, 0, 0);
+
+    return score;
+}
