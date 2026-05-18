@@ -43,7 +43,7 @@ function getFilterString(): string {
 
 function updateValueDisplays(): void {
     SLIDER_IDS.forEach((id) => {
-        getEl<HTMLElement>(id + 'Value').textContent =
+        getEl<HTMLElement>(`${id}Value`).textContent =
             getEl<HTMLInputElement>(id).value + (UNITS[id] ?? '');
     });
 }
@@ -98,7 +98,7 @@ export function initFilters(state: AppState, onUpdate: (state: AppState) => void
     });
     document.querySelectorAll<HTMLButtonElement>('.preset-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
-            applyPreset(btn.dataset['preset'] ?? '', state);
+            applyPreset(btn.dataset.preset ?? '', state);
             onUpdate(state);
         });
     });

@@ -5,9 +5,9 @@ export function initTabs(): void {
     const tabContents = document.querySelectorAll<HTMLElement>('.tab-content');
     tabBtns.forEach((btn) => {
         btn.addEventListener('click', () => {
-            const target = btn.dataset['tab'];
+            const target = btn.dataset.tab;
             tabBtns.forEach((b) => b.classList.remove('active'));
-            tabContents.forEach((c) => c.classList.toggle('active', c.dataset['tab'] === target));
+            tabContents.forEach((c) => c.classList.toggle('active', c.dataset.tab === target));
             btn.classList.add('active');
         });
     });

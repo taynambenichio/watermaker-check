@@ -22,10 +22,10 @@ function matchImageBounds(el: HTMLElement): void {
     const container = getEl<HTMLElement>('imageDisplay');
     const imgRect = img.getBoundingClientRect();
     const ctnRect = container.getBoundingClientRect();
-    el.style.top = imgRect.top - ctnRect.top + 'px';
-    el.style.left = imgRect.left - ctnRect.left + 'px';
-    el.style.width = imgRect.width + 'px';
-    el.style.height = imgRect.height + 'px';
+    el.style.top = `${imgRect.top - ctnRect.top}px`;
+    el.style.left = `${imgRect.left - ctnRect.left}px`;
+    el.style.width = `${imgRect.width}px`;
+    el.style.height = `${imgRect.height}px`;
 }
 
 function onImageLoaded(img: HTMLImageElement): void {
@@ -72,7 +72,7 @@ function initCanvasTab(): void {
         } catch (e: unknown) {
             if (e instanceof Error && e.name === 'SecurityError')
                 alert('Análise Canvas não disponível para imagens externas');
-            else alert('Erro ao processar imagem: ' + (e instanceof Error ? e.message : String(e)));
+            else alert(`Erro ao processar imagem: ${e instanceof Error ? e.message : String(e)}`);
         }
     });
 
@@ -110,7 +110,7 @@ function initZoom(): void {
 
     function setZoom(z: number): void {
         state.zoom = Math.max(0.5, Math.min(4, Math.round(z * 100) / 100));
-        zoomLabel.textContent = Math.round(state.zoom * 100) + '%';
+        zoomLabel.textContent = `${Math.round(state.zoom * 100)}%`;
         if (!state.image) return;
         state.image.style.transform = `scale(${state.zoom})`;
         cancelAnimationFrame(zoomRafId);
@@ -151,7 +151,7 @@ function initBeforeAfter(): void {
         if (!state.image) return;
         beforeImg.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
         state.image.style.clipPath = `inset(0 0 0 ${pct}%)`;
-        divider.style.left = pct + '%';
+        divider.style.left = `${pct}%`;
     }
 
     function activate(): void {
@@ -214,7 +214,7 @@ function initExport(): void {
         } catch (e: unknown) {
             if (e instanceof Error && e.name === 'SecurityError')
                 alert('Não é possível exportar imagens de origem externa');
-            else alert('Erro ao exportar: ' + (e instanceof Error ? e.message : String(e)));
+            else alert(`Erro ao exportar: ${e instanceof Error ? e.message : String(e)}`);
         }
     });
 }

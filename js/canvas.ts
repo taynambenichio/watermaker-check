@@ -127,7 +127,7 @@ export function renderSobel(img: HTMLImageElement, overlayCanvas: HTMLCanvasElem
     } catch (e: unknown) {
         if (e instanceof Error && e.name === 'SecurityError')
             alert('Análise Canvas não disponível para imagens externas');
-        else alert('Erro ao processar imagem: ' + (e instanceof Error ? e.message : String(e)));
+        else alert(`Erro ao processar imagem: ${e instanceof Error ? e.message : String(e)}`);
     }
 }
 
@@ -137,7 +137,7 @@ export function renderAmplify(img: HTMLImageElement, overlayCanvas: HTMLCanvasEl
     } catch (e: unknown) {
         if (e instanceof Error && e.name === 'SecurityError')
             alert('Análise Canvas não disponível para imagens externas');
-        else alert('Erro ao processar imagem: ' + (e instanceof Error ? e.message : String(e)));
+        else alert(`Erro ao processar imagem: ${e instanceof Error ? e.message : String(e)}`);
     }
 }
 
