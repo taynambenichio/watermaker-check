@@ -1,8 +1,16 @@
 import { clearOverlay, renderAmplify, renderHistogram, renderSobel } from './canvas.js';
 import { renderELA } from './ela.js';
 import { applyFilters, initFilters } from './filters.js';
+import { runForensicPipeline } from './forensics/index.js';
 import type { AppState } from './types.js';
-import { enableImageTools, initTabs, initUpload, updateAnalysisPanel } from './ui.js';
+import {
+    enableImageTools,
+    initTabs,
+    initUpload,
+    renderForensicResults,
+    renderGhostSlider,
+    updateAnalysisPanel,
+} from './ui.js';
 
 export const state: AppState = {
     image: null,
@@ -35,6 +43,8 @@ function onImageLoaded(img: HTMLImageElement): void {
     state.image = img;
     state.activeCanvasMode = null;
     state.beforeAfterActive = false;
+    state.forensicResult = null;
+    state.ghostLevelIndex = 0;
     const overlay = getEl<HTMLCanvasElement>('canvasOverlay');
     clearOverlay(overlay);
     getEl<HTMLElement>('histogramContainer').style.display = 'none';
@@ -46,6 +56,7 @@ function onImageLoaded(img: HTMLImageElement): void {
     applyFilters(state);
     updateAnalysisPanel(state);
     enableImageTools();
+    startForensicsAnalysis(img);
 }
 
 function initCanvasTab(): void {
@@ -263,6 +274,116 @@ function initElaTab(): void {
     });
 }
 
+function updateForensicsProgress(_step: string, pct: number, label: string): void {
+    const bar = document.getElementById('forensicsProgressBar');
+    const lbl = document.getElementById('forensicsProgressLabel');
+    const prog = document.getElementById('forensicsProgress');
+    if (prog) prog.style.display = '';
+    if (bar) bar.style.width = `${pct}%`;
+    if (lbl) lbl.textContent = label;
+}
+
+function startForensicsAnalysis(img: HTMLImageElement): void {
+    const placeholder = document.getElementById('forensicsPlaceholder');
+    const rerunBtn = document.getElementById('forensicsRerunBtn') as HTMLButtonElement | null;
+
+    if (placeholder) placeholder.style.display = 'none';
+    if (rerunBtn) rerunBtn.disabled = true;
+
+    // Hide previous result sections
+    [
+        'forensicsExifSection',
+        'forensicsNoiseSection',
+        'forensicsGhostSection',
+        'forensicsReportSection',
+    ].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+
+    const STEP_LABELS: Record<string, string> = {
+        exif: 'A ler metadados EXIF…',
+        noise: 'A analisar ruído…',
+        ela: 'A calcular ELA…',
+        ghost: 'A detectar Ghost JPEG…',
+        report: 'A gerar relatório…',
+    };
+    const STEP_PCT: Record<string, number> = {
+        exif: 20,
+        noise: 40,
+        ela: 60,
+        ghost: 80,
+        report: 95,
+    };
+
+    runForensicPipeline(img, (step, status) => {
+        if (status === 'running')
+            updateForensicsProgress(step, STEP_PCT[step] ?? 50, STEP_LABELS[step] ?? '…');
+    })
+        .then((result) => {
+            state.forensicResult = result;
+            state.ghostLevelIndex = 0;
+
+            const prog = document.getElementById('forensicsProgress');
+            if (prog) prog.style.display = 'none';
+
+            renderForensicResults(result, img, 0);
+
+            if (rerunBtn) {
+                rerunBtn.style.display = '';
+                rerunBtn.disabled = false;
+            }
+        })
+        .catch((err: unknown) => {
+            console.error('Forensic pipeline failed:', err);
+            const prog = document.getElementById('forensicsProgress');
+            if (prog) prog.style.display = 'none';
+            if (rerunBtn) {
+                rerunBtn.style.display = '';
+                rerunBtn.disabled = false;
+            }
+        });
+}
+
+function initForensicsTab(): void {
+    const rerunBtn = document.getElementById('forensicsRerunBtn') as HTMLButtonElement | null;
+    const slider = document.getElementById('ghostQualitySlider') as HTMLInputElement | null;
+    const exportBtn = document.getElementById('forensicsExportBtn') as HTMLButtonElement | null;
+
+    rerunBtn?.addEventListener('click', () => {
+        if (state.image) startForensicsAnalysis(state.image);
+    });
+
+    slider?.addEventListener('input', () => {
+        const idx = Number(slider.value);
+        state.ghostLevelIndex = idx;
+        if (state.forensicResult) renderGhostSlider(state.forensicResult, idx);
+    });
+
+    exportBtn?.addEventListener('click', () => {
+        if (!state.forensicResult) return;
+        const { report } = state.forensicResult;
+        const data = {
+            timestamp: new Date(report.completedAt).toISOString(),
+            verdict: report.verdict,
+            totalScore: report.totalScore,
+            breakdown: {
+                ela: report.ela,
+                ghost: report.ghost,
+                noise: report.noise,
+                exif: report.exif,
+            },
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'forensic-report.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+}
+
 // Bootstrap
 initTabs();
 initUpload(state, onImageLoaded);
@@ -272,4 +393,5 @@ initZoom();
 initBeforeAfter();
 initExport();
 initElaTab();
+initForensicsTab();
 updateAnalysisPanel(state);

@@ -1,4 +1,5 @@
-import type { AppState } from './types.js';
+import { renderNoiseMap } from './forensics/noise.js';
+import type { AppState, ForensicPipelineResult } from './types.js';
 
 export function initTabs(): void {
     const tabBtns = document.querySelectorAll<HTMLButtonElement>('.tab-btn');
@@ -148,4 +149,154 @@ export function enableImageTools(): void {
         const el = document.getElementById(id) as HTMLButtonElement | null;
         if (el) el.disabled = false;
     });
+}
+
+const QUALITIES = [50, 65, 80, 95] as const;
+
+export function renderGhostSlider(result: ForensicPipelineResult, levelIndex: number): void {
+    const canvas = document.getElementById('ghostCanvas') as HTMLCanvasElement | null;
+    const label = document.getElementById('ghostQualityLabel');
+    if (!canvas || !result.ghost.levels[levelIndex]) return;
+
+    const level = result.ghost.levels[levelIndex];
+    if (label) label.textContent = `Q ${QUALITIES[levelIndex]}`;
+
+    canvas.width = level.imageData.width;
+    canvas.height = level.imageData.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const id = ctx.createImageData(level.imageData.width, level.imageData.height);
+    id.data.set(level.imageData.data);
+    ctx.putImageData(id, 0, 0);
+}
+
+function verdictBadgeClass(score: number): string {
+    if (score < 30) return 'forensics-badge-green';
+    if (score <= 60) return 'forensics-badge-amber';
+    return 'forensics-badge-red';
+}
+
+export function renderForensicResults(
+    result: ForensicPipelineResult,
+    img: HTMLImageElement,
+    ghostLevelIndex: number,
+): void {
+    const show = (id: string) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = '';
+    };
+
+    // ── EXIF ──────────────────────────────────────────────────────────────
+    show('forensicsExifSection');
+    const exifBadge = document.getElementById('forensicsExifBadge');
+    const exifBody = document.getElementById('forensicsExifBody');
+
+    if (exifBadge) {
+        exifBadge.className = `forensics-badge ${verdictBadgeClass(result.exif.score)}`;
+        exifBadge.textContent = `Score ${result.exif.score}`;
+    }
+
+    if (exifBody) {
+        const { exif } = result;
+        let html = '<table class="forensics-exif-table">';
+        html += `<tr><td>EXIF presente</td><td>${exif.hasExif ? '✅ Sim' : '❌ Não'}</td></tr>`;
+        if (exif.camera) html += `<tr><td>Câmara</td><td>${exif.camera}</td></tr>`;
+        if (exif.software) html += `<tr><td>Software</td><td>${exif.software}</td></tr>`;
+        if (exif.dateTime) html += `<tr><td>Data</td><td>${exif.dateTime}</td></tr>`;
+        html += `<tr><td>GPS</td><td>${exif.gpsPresent ? '✅ Presente' : '—'}</td></tr>`;
+        html += '</table>';
+
+        for (const flag of exif.flags) {
+            html += `<div class="forensics-flag-row">⚠️ <span>${flag.message}</span></div>`;
+        }
+        exifBody.innerHTML = html;
+    }
+
+    // ── Noise ──────────────────────────────────────────────────────────────
+    show('forensicsNoiseSection');
+    const noiseBadge = document.getElementById('forensicsNoiseBadge');
+    const noiseBody = document.getElementById('forensicsNoiseBody');
+    const noiseCanvas = document.getElementById('noiseCanvas') as HTMLCanvasElement | null;
+
+    if (noiseBadge) {
+        noiseBadge.className = `forensics-badge ${verdictBadgeClass(result.noise.score)}`;
+        noiseBadge.textContent = `Score ${result.noise.score}`;
+    }
+
+    if (noiseBody) {
+        noiseBody.textContent = `${result.noise.suspiciousBlockCount} bloco(s) anómalo(s) de ${result.noise.totalBlockCount} total`;
+    }
+
+    if (noiseCanvas) {
+        renderNoiseMap(result.noise, noiseCanvas, img.naturalWidth, img.naturalHeight);
+    }
+
+    // ── Ghost ──────────────────────────────────────────────────────────────
+    show('forensicsGhostSection');
+    const ghostBadge = document.getElementById('forensicsGhostBadge');
+    const ghostBody = document.getElementById('forensicsGhostBody');
+
+    if (ghostBadge) {
+        ghostBadge.className = `forensics-badge ${verdictBadgeClass(result.ghost.score)}`;
+        ghostBadge.textContent = `Score ${result.ghost.score}`;
+    }
+
+    if (ghostBody) {
+        ghostBody.textContent = result.ghost.suspectedOriginalQuality
+            ? `Qualidade original suspeita: Q${result.ghost.suspectedOriginalQuality}`
+            : 'Sem sinal de dupla compressão JPEG detectado';
+    }
+
+    renderGhostSlider(result, ghostLevelIndex);
+
+    // ── Report ──────────────────────────────────────────────────────────────
+    show('forensicsReportSection');
+    const reportBadge = document.getElementById('forensicsReportBadge');
+    const scoreGrid = document.getElementById('forensicsScoreGrid');
+    const totalScoreEl = document.getElementById('forensicsTotalScore');
+    const scoreBar = document.getElementById('forensicsScoreBar');
+
+    const { report } = result;
+    const verdictLabel =
+        report.verdict === 'authentic'
+            ? '🟢 Autêntico'
+            : report.verdict === 'suspicious'
+              ? '🟡 Suspeito'
+              : '🔴 Adulterado';
+    const verdictClass = verdictBadgeClass(report.totalScore);
+
+    if (reportBadge) {
+        reportBadge.className = `forensics-badge ${verdictClass}`;
+        reportBadge.textContent = verdictLabel;
+    }
+
+    if (scoreGrid) {
+        const cards = [
+            ['ELA', report.ela, '×0.25'],
+            ['Ghost', report.ghost, '×0.30'],
+            ['Ruído', report.noise, '×0.25'],
+            ['EXIF', report.exif, '×0.20'],
+        ] as const;
+        scoreGrid.innerHTML = cards
+            .map(
+                ([label, score, weight]) =>
+                    `<div class="forensics-score-card">
+                        <div class="forensics-score-card-label">${label} <span style="color:#4b5563">${weight}</span></div>
+                        <div class="forensics-score-card-value" style="color:${score < 30 ? '#86efac' : score <= 60 ? '#fbbf24' : '#f87171'}">${score}</div>
+                    </div>`,
+            )
+            .join('');
+    }
+
+    if (totalScoreEl) {
+        totalScoreEl.textContent = `${report.totalScore} / 100`;
+        totalScoreEl.style.color =
+            report.totalScore < 30 ? '#86efac' : report.totalScore <= 60 ? '#fbbf24' : '#f87171';
+    }
+
+    if (scoreBar) {
+        scoreBar.style.width = `${report.totalScore}%`;
+        scoreBar.style.background =
+            report.totalScore < 30 ? '#22c55e' : report.totalScore <= 60 ? '#f59e0b' : '#ef4444';
+    }
 }
