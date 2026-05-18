@@ -13,14 +13,8 @@ export function ToolsTab({ state, dispatch, imageRef, overlayCanvasRef }: ToolsT
     const { imageElement, zoom, beforeAfterActive, forensicResult } = state;
     const disabled = !imageElement;
 
-    const zoomIn = useCallback(
-        () => dispatch({ type: 'SET_ZOOM', zoom: zoom + 0.25 }),
-        [dispatch, zoom],
-    );
-    const zoomOut = useCallback(
-        () => dispatch({ type: 'SET_ZOOM', zoom: zoom - 0.25 }),
-        [dispatch, zoom],
-    );
+    const zoomIn = useCallback(() => dispatch({ type: 'ADJUST_ZOOM', delta: 0.25 }), [dispatch]);
+    const zoomOut = useCallback(() => dispatch({ type: 'ADJUST_ZOOM', delta: -0.25 }), [dispatch]);
     const zoomReset = useCallback(() => dispatch({ type: 'SET_ZOOM', zoom: 1 }), [dispatch]);
 
     const exportPNG = useCallback(() => {
