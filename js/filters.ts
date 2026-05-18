@@ -15,15 +15,23 @@ const UNITS: Record<string, string> = {
     brightness: '%', contrast: '%', saturation: '%', hue: '°', invert: '%', blur: 'px',
 };
 
+const CSS_FN: Record<string, (v: string) => string> = {
+    brightness: v => `brightness(${v}%)`,
+    contrast:   v => `contrast(${v}%)`,
+    saturation: v => `saturate(${v}%)`,
+    hue:        v => `hue-rotate(${v}deg)`,
+    invert:     v => `invert(${v}%)`,
+    blur:       v => `blur(${v}px)`,
+};
+
 function getEl<T extends HTMLElement>(id: string): T {
     return document.getElementById(id) as T;
 }
 
 function getFilterString(): string {
-    const v = (id: string): string => getEl<HTMLInputElement>(id).value;
-    return `brightness(${v('brightness')}%) contrast(${v('contrast')}%) ` +
-           `saturate(${v('saturation')}%) hue-rotate(${v('hue')}deg) ` +
-           `invert(${v('invert')}%) blur(${v('blur')}px)`;
+    return SLIDER_IDS
+        .map(id => (CSS_FN[id] ?? (v => `${id}(${v})`))(getEl<HTMLInputElement>(id).value))
+        .join(' ');
 }
 
 function updateValueDisplays(): void {

@@ -14,7 +14,7 @@
 
 | File | Action | Responsibility |
 |------|--------|----------------|
-| `package.json` | **Create** | npm scripts: dev, build, test |
+| `package.json` | **Create** | pnpm scripts: dev, build, test |
 | `tsconfig.json` | **Create** | strict: true, moduleResolution: bundler, lib: DOM |
 | `vite.config.ts` | **Create** | Vite entry at project root; Vitest node environment |
 | `.gitignore` | **Modify** | Add `node_modules/`, `dist/` |
@@ -112,7 +112,7 @@ dist/
 - [ ] **Step 5: Install dependencies**
 
 ```bash
-npm install
+pnpm install
 ```
 
 Expected: `node_modules/` created, no errors. Check:
@@ -282,7 +282,7 @@ describe('amplifyDifferences', () => {
 - [ ] **Step 2: Run tests — expect PASS (canvas.js still exists)**
 
 ```bash
-npm test
+pnpm test
 ```
 
 Expected: 7 tests pass. If Vitest can't find types, that's fine — the TypeScript errors in the test file don't block Vitest from running. If there are import errors, verify `canvas.js` still exists: `ls js/canvas.js`.
@@ -450,7 +450,7 @@ export function clearOverlay(overlayCanvas: HTMLCanvasElement): void {
 - [ ] **Step 2: Run tests — expect PASS (canvas.ts now resolves the `canvas.js` import)**
 
 ```bash
-npm test
+pnpm test
 ```
 
 Expected: 7 tests pass. The import `from '../js/canvas.js'` in the test file resolves to `canvas.ts` via TypeScript's `moduleResolution: "bundler"` rules.
@@ -1025,7 +1025,7 @@ Expected: no output (zero errors). If errors appear, fix them before proceeding.
 - [ ] **Step 5: Run tests — expect all 7 pass**
 
 ```bash
-npm test
+pnpm test
 ```
 
 Expected output (all 7 passing):
@@ -1045,7 +1045,7 @@ Tests       7 passed (7)
 - [ ] **Step 6: Run build — expect success**
 
 ```bash
-npm run build 2>&1 | tail -10
+pnpm run build 2>&1 | tail -10
 ```
 
 Expected: `dist/` folder created, output ending with `✓ built in ...ms` or similar success message. No TypeScript errors.
@@ -1072,7 +1072,7 @@ Expected: no output (zero errors).
 - [ ] **Step 2: Run all tests**
 
 ```bash
-npm test
+pnpm test
 ```
 
 Expected: 7/7 tests pass.
@@ -1080,7 +1080,7 @@ Expected: 7/7 tests pass.
 - [ ] **Step 3: Run build**
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 Expected: `dist/` built without errors.
@@ -1119,10 +1119,10 @@ git push
 
 ## Acceptance Criteria
 
-- [ ] `npm install` — no errors
-- [ ] `npm run dev` — Vite dev server starts, app loads in browser at `http://localhost:5173`
-- [ ] `npm run build` — `dist/` produced, zero TypeScript errors
-- [ ] `npm test` — 7/7 Vitest tests pass
+- [ ] `pnpm install` — no errors
+- [ ] `pnpm run dev` — Vite dev server starts, app loads in browser at `http://localhost:5173`
+- [ ] `pnpm run build` — `dist/` produced, zero TypeScript errors
+- [ ] `pnpm test` — 7/7 Vitest tests pass
 - [ ] `npx tsc --noEmit` — zero errors
 - [ ] No `any` types in source without a comment explaining why
 - [ ] All old `.js` source files deleted
