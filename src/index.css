@@ -1,0 +1,200 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    /* Backgrounds */
+    --color-bg: #0c0c0a;
+    --color-bg-1: #131311;
+    --color-bg-2: #1b1b18;
+    --color-bg-3: #242420;
+    /* Borders */
+    --color-border: #2a2a26;
+    --color-border-soft: #222220;
+    /* Text */
+    --color-text: #e6e1d5;
+    --color-text-2: #9a9485;
+    --color-text-3: #5a5750;
+    /* Semantic accent */
+    --color-amber: #e8a800;
+    --color-amber-dim: #3a2a00;
+    --color-green: #5cb87a;
+    --color-green-dim: #0d2818;
+    --color-red: #d95f5f;
+    --color-red-dim: #2a0f0f;
+    --color-blue: #5b9cf6;
+    --color-blue-dim: #0d1e3a;
+    /* Typography */
+    --font-sans: "DM Sans", system-ui, sans-serif;
+    --font-syne: "Syne", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@theme inline {
+    --font-heading: var(--font-syne);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+    --background: #0c0c0a;
+    --foreground: #e6e1d5;
+    --card: #131311;
+    --card-foreground: #e6e1d5;
+    --popover: #131311;
+    --popover-foreground: #e6e1d5;
+    --primary: #e8a800;
+    --primary-foreground: #0c0c0a;
+    --secondary: #1b1b18;
+    --secondary-foreground: #e6e1d5;
+    --muted: #1b1b18;
+    --muted-foreground: #9a9485;
+    --accent: #242420;
+    --accent-foreground: #e6e1d5;
+    --destructive: #d95f5f;
+    --destructive-foreground: #fff7f7;
+    --border: #2a2a26;
+    --input: #222220;
+    --ring: #e8a800;
+    --radius: 0.625rem;
+}
+
+.dark {
+    --background: #0c0c0a;
+    --foreground: #e6e1d5;
+    --card: #131311;
+    --card-foreground: #e6e1d5;
+    --popover: #131311;
+    --popover-foreground: #e6e1d5;
+    --primary: #e8a800;
+    --primary-foreground: #0c0c0a;
+    --secondary: #1b1b18;
+    --secondary-foreground: #e6e1d5;
+    --muted: #1b1b18;
+    --muted-foreground: #9a9485;
+    --accent: #242420;
+    --accent-foreground: #e6e1d5;
+    --destructive: #d95f5f;
+    --destructive-foreground: #fff7f7;
+    --border: #2a2a26;
+    --input: #222220;
+    --ring: #e8a800;
+}
+
+/* Base */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+html,
+body,
+#root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+body {
+    background: #0c0c0a;
+    color: #e6e1d5;
+    font-family: "DM Sans", sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #131311;
+}
+::-webkit-scrollbar-thumb {
+    background: #2a2a26;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #3a3a36;
+}
+
+/* Focus ring */
+*:focus-visible {
+    outline: 2px solid #e8a800;
+    outline-offset: 2px;
+}
+
+/* Grid texture for document stage */
+.doc-grid {
+    background-image:
+        linear-gradient(rgba(230, 225, 213, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(230, 225, 213, 0.025) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+/* Scan line animation */
+@keyframes scan-line {
+    0% {
+        transform: translateY(-100%);
+    }
+    100% {
+        transform: translateY(100%);
+    }
+}
+.scan-line::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        transparent 40%,
+        rgba(232, 168, 0, 0.04) 50%,
+        transparent 60%
+    );
+    pointer-events: none;
+    animation: scan-line 4s linear infinite;
+}
+
+/* Noise canvas pixel rendering */
+canvas.noise-map {
+    image-rendering: pixelated;
+}
+
+/* Accent range slider */
+input[type="range"] {
+    accent-color: #e8a800;
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+
+    html {
+        @apply font-sans;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}
