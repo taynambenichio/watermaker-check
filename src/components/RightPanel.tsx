@@ -2,8 +2,10 @@ import type { Dispatch, RefObject } from 'react';
 import type { AppAction, AppState } from '../types.ts';
 import { ForensicsContent } from './forensics/ForensicsContent.tsx';
 import { CanvasTab } from './tabs/CanvasTab.tsx';
+import { CopyMoveTab } from './tabs/CopyMoveTab.tsx';
 import { ElaTab } from './tabs/ElaTab.tsx';
 import { FiltersTab } from './tabs/FiltersTab.tsx';
+import { ResamplingTab } from './tabs/ResamplingTab.tsx';
 import { ToolsTab } from './tabs/ToolsTab.tsx';
 
 interface RightPanelProps {
@@ -33,6 +35,8 @@ export function RightPanel({ state, dispatch, imageRef, overlayCanvasRef }: Righ
                 {activeTab === 'ela' && (
                     <ElaTab state={state} dispatch={dispatch} imageRef={imageRef} />
                 )}
+                {activeTab === 'copy-move' && <CopyMoveTab state={state} />}
+                {activeTab === 'resampling' && <ResamplingTab state={state} />}
                 {activeTab === 'tools' && (
                     <ToolsTab
                         state={state}

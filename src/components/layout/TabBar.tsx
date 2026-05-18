@@ -5,6 +5,8 @@ const TABS: { id: ActiveTab; label: string }[] = [
     { id: 'filters', label: 'Filtros' },
     { id: 'canvas', label: 'Canvas' },
     { id: 'ela', label: 'ELA' },
+    { id: 'copy-move', label: 'Copy-Move' },
+    { id: 'resampling', label: 'Resampling' },
     { id: 'tools', label: 'Ferramentas' },
 ];
 
