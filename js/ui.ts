@@ -265,12 +265,42 @@ export function renderForensicResults(
     }
 
     if (ghostBody) {
-        ghostBody.textContent = result.ghost.suspectedOriginalQuality
+        let text = result.ghost.suspectedOriginalQuality
             ? `Qualidade original suspeita: Q${result.ghost.suspectedOriginalQuality}`
             : 'Sem sinal de dupla compressão JPEG detectado';
+        if (result.ghost.heicConverted) {
+            text += ' — ⚠️ Fonte HEIC: análise Ghost pode ser imprecisa';
+        }
+        ghostBody.textContent = text;
     }
 
     renderGhostSlider(result, ghostLevelIndex);
+
+    // ── Quality ──────────────────────────────────────────────────────────────
+    show('forensicsQualitySection');
+    const qualityBadge = document.getElementById('forensicsQualityBadge');
+    const qualityBody = document.getElementById('forensicsQualityBody');
+
+    if (qualityBadge) {
+        qualityBadge.className = `forensics-badge ${result.quality.isAcceptable ? 'badge-ok' : 'badge-warn'}`;
+        qualityBadge.textContent = result.quality.isAcceptable ? 'OK' : 'Atenção';
+    }
+
+    if (qualityBody) {
+        let html = '';
+        html += '<div class="quality-meter-row">';
+        html += '<span>Nitidez</span>';
+        html += `<div class="quality-meter"><div class="quality-meter-fill" style="width:${result.quality.sharpness}%"></div></div>`;
+        html += `<span>${result.quality.sharpness}/100</span></div>`;
+        html += '<div class="quality-meter-row">';
+        html += '<span>Exposição</span>';
+        html += `<div class="quality-meter"><div class="quality-meter-fill" style="width:${result.quality.exposure}%"></div></div>`;
+        html += `<span>${result.quality.exposure}/100</span></div>`;
+        for (const flag of result.quality.flags) {
+            html += `<div class="forensics-flag-row">⚠️ <span>${flag.message}</span></div>`;
+        }
+        qualityBody.innerHTML = html;
+    }
 
     // ── Report ──────────────────────────────────────────────────────────────
     show('forensicsReportSection');

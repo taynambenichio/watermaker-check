@@ -23,7 +23,7 @@ export interface ImageDataLike {
 }
 
 // ── Pipeline progress ──────────────────────────────────────────────────────
-export type PipelineStep = 'exif' | 'noise' | 'ghost' | 'ela' | 'report';
+export type PipelineStep = 'exif' | 'noise' | 'ghost' | 'ela' | 'report' | 'quality';
 
 export type PipelineProgressCallback = (
     step: PipelineStep,
@@ -67,6 +67,22 @@ export interface GhostResult {
     score: number;
     levels: GhostLevel[];
     suspectedOriginalQuality: number | null;
+    heicConverted?: boolean; // true when source was HEIC — Ghost analysis may be unreliable
+}
+
+// ── Quality ───────────────────────────────────────────────────────────────
+export type QualityFlagCode = 'BLUR' | 'DARK' | 'OVEREXPOSED';
+
+export interface QualityFlag {
+    code: QualityFlagCode;
+    message: string;
+}
+
+export interface QualityResult {
+    sharpness: number; // 0–100 (100 = sharp)
+    exposure: number; // 0–100 (100 = max brightness)
+    flags: QualityFlag[];
+    isAcceptable: boolean; // suitable for document verification
 }
 
 // ── Report ────────────────────────────────────────────────────────────────
@@ -88,5 +104,6 @@ export interface ForensicPipelineResult {
     noise: NoiseResult;
     ghost: GhostResult;
     elaScore: number;
+    quality: QualityResult;
     report: ForensicReport;
 }

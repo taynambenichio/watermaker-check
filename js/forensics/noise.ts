@@ -82,14 +82,26 @@ export function analyzeNoise(imageData: ImageDataLike, blockSize = 32): NoiseRes
         }
     }
 
-    const mean = Array.from(variances).reduce((a, b) => a + b, 0) / totalBlockCount;
-    const stdDev = Math.sqrt(
-        Array.from(variances).reduce((acc, v) => acc + (v - mean) ** 2, 0) / totalBlockCount,
-    );
-    const threshold = mean + 2 * stdDev;
+    // Tukey IQR outlier detection — robust against text-heavy documents.
+    // Only flags blocks that are genuine statistical outliers (Tukey fence),
+    // so high-Laplacian text areas don't inflate the suspicion threshold.
+    const sorted = Array.from(variances).sort((a, b) => a - b);
+    const n = sorted.length;
+
+    function quantile(p: number): number {
+        const idx = p * (n - 1);
+        const lo = Math.floor(idx);
+        const hi = Math.ceil(idx);
+        return lo === hi ? sorted[lo] : sorted[lo] + (idx - lo) * (sorted[hi] - sorted[lo]);
+    }
+
+    const q1 = quantile(0.25);
+    const q3 = quantile(0.75);
+    const iqr = q3 - q1;
+    const threshold = q3 + 1.5 * iqr;
 
     let suspiciousBlockCount = 0;
-    const maxVariance = Math.max(...Array.from(variances), 1); // avoid /0
+    const maxVariance = Math.max(...Array.from(variances), 1);
     const blockMap = new Float32Array(totalBlockCount);
 
     for (let i = 0; i < totalBlockCount; i++) {

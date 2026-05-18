@@ -296,6 +296,7 @@ function startForensicsAnalysis(img: HTMLImageElement): void {
         'forensicsExifSection',
         'forensicsNoiseSection',
         'forensicsGhostSection',
+        'forensicsQualitySection',
         'forensicsReportSection',
     ].forEach((id) => {
         const el = document.getElementById(id);
