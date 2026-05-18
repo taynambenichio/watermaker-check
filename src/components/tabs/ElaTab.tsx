@@ -22,7 +22,7 @@ export function ElaTab({ state, dispatch, imageRef }: ElaTabProps) {
         dispatch({ type: 'SET_ELA_SCORE', score: null });
         try {
             const score = await renderELA(img, canvas, elaAmplification);
-            dispatch({ type: 'SET_ELA_SCORE', score });
+            dispatch({ type: 'SET_ELA_SCORE', score: 100 - score });
         } catch (e: unknown) {
             if (e instanceof Error && e.name === 'SecurityError') {
                 alert('ELA não disponível para imagens de origem externa');
@@ -38,9 +38,9 @@ export function ElaTab({ state, dispatch, imageRef }: ElaTabProps) {
     const scoreColor =
         elaScore === null
             ? '#5a5750'
-            : elaScore < 30
+            : elaScore > 70
               ? '#5cb87a'
-              : elaScore < 60
+              : elaScore >= 40
                 ? '#e8a800'
                 : '#d95f5f';
 

@@ -27,7 +27,7 @@ export function ForensicsContent({ state, dispatch }: ForensicsContentProps) {
                 <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-3">
                     <ModuleCard
                         title="Metadados EXIF"
-                        score={forensicResult.exif.score}
+                        score={forensicResult.report.exif}
                         icon="🗂"
                         defaultOpen
                     >
@@ -36,7 +36,7 @@ export function ForensicsContent({ state, dispatch }: ForensicsContentProps) {
 
                     <ModuleCard
                         title="Inconsistência de Ruído"
-                        score={forensicResult.noise.score}
+                        score={forensicResult.report.noise}
                         icon="🌊"
                     >
                         <NoiseModule
@@ -46,7 +46,7 @@ export function ForensicsContent({ state, dispatch }: ForensicsContentProps) {
                         />
                     </ModuleCard>
 
-                    <ModuleCard title="JPEG Ghost" score={forensicResult.ghost.score} icon="👻">
+                    <ModuleCard title="JPEG Ghost" score={forensicResult.report.ghost} icon="👻">
                         <GhostModule
                             result={forensicResult.ghost}
                             levelIndex={ghostLevelIndex}
@@ -65,13 +65,13 @@ export function ForensicsContent({ state, dispatch }: ForensicsContentProps) {
 
                     <ModuleCard
                         title="Error Level Analysis"
-                        score={forensicResult.elaScore}
+                        score={forensicResult.report.ela}
                         icon="🔬"
                     >
                         <p className="text-xs text-text-3">
                             Score ELA:{' '}
-                            <span className="font-mono text-blue">{forensicResult.elaScore}</span> —{' '}
-                            Use a aba ELA para visualização detalhada.
+                            <span className="font-mono text-blue">{forensicResult.report.ela}</span>{' '}
+                            — Use a aba ELA para visualização detalhada.
                         </p>
                     </ModuleCard>
                 </div>

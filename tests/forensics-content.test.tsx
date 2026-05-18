@@ -75,12 +75,12 @@ describe('ForensicsContent', () => {
                             isAcceptable: true,
                         },
                         report: {
-                            totalScore: 0,
+                            totalScore: 100,
                             verdict: 'authentic',
-                            ela: 0,
-                            exif: 0,
-                            noise: 0,
-                            ghost: 0,
+                            ela: 100,
+                            exif: 100,
+                            noise: 100,
+                            ghost: 100,
                             completedAt: Date.now(),
                         },
                     },
@@ -145,12 +145,12 @@ describe('ForensicsContent', () => {
                             isAcceptable: true,
                         },
                         report: {
-                            totalScore: 78,
+                            totalScore: 39,
                             verdict: 'tampered',
-                            ela: 81,
+                            ela: 19,
                             exif: 50,
-                            noise: 42,
-                            ghost: 67,
+                            noise: 58,
+                            ghost: 33,
                             completedAt: Date.now(),
                         },
                     },
@@ -160,7 +160,7 @@ describe('ForensicsContent', () => {
         );
 
         expect(html).toContain('Provável Adulteração');
-        expect(html).toContain('Score 78 de 100');
+        expect(html).toContain('Score 39 de 100');
         expect(html).toContain('Metadados EXIF');
         expect(html).toContain('Inconsistência de Ruído');
         expect(html).toContain('JPEG Ghost');
