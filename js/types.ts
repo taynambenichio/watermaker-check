@@ -2,7 +2,7 @@ export interface AppState {
     image: HTMLImageElement | null;
     zoom: number;
     activePreset: string | null;
-    activeCanvasMode: 'histogram' | 'sobel' | 'amplify' | null;
+    activeCanvasMode: 'histogram' | 'sobel' | 'amplify' | 'ela' | null;
     beforeAfterActive: boolean;
 }
 

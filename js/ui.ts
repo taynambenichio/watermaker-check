@@ -89,6 +89,7 @@ export function updateAnalysisPanel(state: AppState): void {
         histogram: 'Histograma RGB',
         sobel: 'Detecção de Bordas (Sobel)',
         amplify: 'Amplificação de Diferenças',
+        ela: 'Error Level Analysis (ELA)',
     };
     const presetLabels: Record<string, string> = {
         uv: 'Simulação de Luz UV',
@@ -121,6 +122,8 @@ export function updateAnalysisPanel(state: AppState): void {
     else if (state.activeCanvasMode === 'amplify') rec = 'Diferenças sutis amplificadas 5×';
     else if (state.activeCanvasMode === 'histogram')
         rec = 'Veja a distribuição de cores no histograma';
+    else if (state.activeCanvasMode === 'ela')
+        rec = 'Regiões quentes (vermelho/branco) indicam adulteração';
     else if (state.activePreset === 'uv') rec = 'Ideal para detectar tintas fluorescentes';
     else if (state.activePreset === 'watermark') rec = "Optimize contraste para marcas d'água";
     else if (state.activePreset === 'security') rec = 'Configuração para elementos de segurança';
@@ -134,6 +137,7 @@ export function enableImageTools(): void {
         'sobelBtn',
         'amplifyBtn',
         'clearCanvasBtn',
+        'elaBtn',
         'zoomInBtn',
         'zoomOutBtn',
         'zoomResetBtn',
