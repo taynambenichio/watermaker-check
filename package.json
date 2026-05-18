@@ -3,11 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev":    "vite",
-    "build":  "vite build",
-    "test":   "vitest run",
-    "lint":   "biome lint js/ tests/ vite.config.ts",
-    "check":  "biome check js/ tests/ vite.config.ts",
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "lint": "biome lint js/ tests/ vite.config.ts",
+    "check": "biome check js/ tests/ vite.config.ts",
     "format": "biome format --write js/ tests/ vite.config.ts"
   },
   "packageManager": "pnpm@10.32.1",
@@ -16,5 +16,8 @@
     "typescript": "^5",
     "vite": "^5",
     "vitest": "^1"
+  },
+  "dependencies": {
+    "exifr": "^7.1.3"
   }
 }

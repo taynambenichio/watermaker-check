@@ -10,6 +10,8 @@ export const state: AppState = {
     activePreset: null,
     activeCanvasMode: null,
     beforeAfterActive: false,
+    forensicResult: null,
+    ghostLevelIndex: 0,
 };
 
 function getEl<T extends HTMLElement>(id: string): T {
