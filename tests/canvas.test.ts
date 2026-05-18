@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { computeHistogram, sobelEdges, amplifyDifferences } from '../js/canvas.js';
+import { describe, expect, it } from 'vitest';
+import { amplifyDifferences, computeHistogram, sobelEdges } from '../js/canvas.js';
 import type { ImageDataLike } from '../js/types.js';
 
 function img(pixels: number[], width: number, height: number): ImageDataLike {
