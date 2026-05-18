@@ -1,10 +1,14 @@
 import { renderELA } from '../ela.js';
 import type { ForensicPipelineResult, PipelineProgressCallback } from '../types.js';
+import { analyzeCopyMove } from './copy-move.js';
+import { analyzeDocStructure } from './doc-structure.js';
 import { analyzeExif } from './exif.js';
 import { analyzeGhost } from './ghost.js';
+import { analyzeHistogramForensic } from './histogram-forensic.js';
 import { analyzeNoise } from './noise.js';
 import { analyzeQuality } from './quality.js';
 import { buildReport } from './report.js';
+import { analyzeResampling } from './resampling.js';
 
 function isHeicFile(file: File): boolean {
     return (
@@ -21,7 +25,6 @@ export async function runForensicPipeline(
 ): Promise<ForensicPipelineResult> {
     const { naturalWidth: w, naturalHeight: h } = img;
 
-    // Capture original ImageData once (reused for noise + quality analysis)
     const tmp = document.createElement('canvas');
     tmp.width = w;
     tmp.height = h;
@@ -66,15 +69,60 @@ export async function runForensicPipeline(
         }),
     ]);
 
-    // Flag HEIC sources — Ghost analysis is affected by heic2any Q92 conversion
     if (sourceFile && isHeicFile(sourceFile)) {
         ghost.heicConverted = true;
     }
 
-    // Phase 3: Report
+    // Phase 3: Advanced modules in parallel (after ELA + Ghost)
+    onProgress?.('copy-move', 'running');
+    onProgress?.('resampling', 'running');
+    onProgress?.('histogram', 'running');
+    onProgress?.('doc-structure', 'running');
+
+    const [copyMoveResult, resamplingResult, histogramResult, docStructureResult] =
+        await Promise.all([
+            Promise.resolve(analyzeCopyMove(imageData)).then((r) => {
+                onProgress?.('copy-move', 'done');
+                return r;
+            }),
+            Promise.resolve(analyzeResampling(imageData)).then((r) => {
+                onProgress?.('resampling', 'done');
+                return r;
+            }),
+            Promise.resolve(analyzeHistogramForensic(imageData)).then((r) => {
+                onProgress?.('histogram', 'done');
+                return r;
+            }),
+            Promise.resolve(analyzeDocStructure(imageData)).then((r) => {
+                onProgress?.('doc-structure', 'done');
+                return r;
+            }),
+        ]);
+
+    // Build report
     onProgress?.('report', 'running');
-    const report = buildReport(elaScore, exif.score, noise.score, ghost.score);
+    const report = buildReport(
+        elaScore,
+        exif.score,
+        noise.score,
+        ghost.score,
+        copyMoveResult.score,
+        resamplingResult.score,
+        histogramResult.score,
+        docStructureResult.score,
+    );
     onProgress?.('report', 'done');
 
-    return { exif, noise, ghost, elaScore, quality, report };
+    return {
+        exif,
+        noise,
+        ghost,
+        elaScore,
+        quality,
+        report,
+        copyMoveResult,
+        resamplingResult,
+        histogramResult,
+        docStructureResult,
+    };
 }
