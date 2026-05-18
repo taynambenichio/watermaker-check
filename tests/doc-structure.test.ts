@@ -5,7 +5,10 @@ import type { ImageDataLike } from '../js/types.js';
 function makeUniformImage(w: number, h: number, value: number): ImageDataLike {
     const data = new Uint8ClampedArray(w * h * 4);
     for (let i = 0; i < data.length; i += 4) {
-        data[i] = value; data[i + 1] = value; data[i + 2] = value; data[i + 3] = 255;
+        data[i] = value;
+        data[i + 1] = value;
+        data[i + 2] = value;
+        data[i + 3] = 255;
     }
     return { data, width: w, height: h };
 }
@@ -29,14 +32,18 @@ describe('analyzeDocStructure', () => {
     });
 
     it('detects MRZ zone when bottom 15% is very uniform and bright', () => {
-        const w = 100, h = 100;
+        const w = 100,
+            h = 100;
         const data = makeRandomImage(w, h).data.slice();
         // Overwrite bottom 15% with very uniform white (mean=220, variance≈0)
         const mrzY0 = Math.floor(h * 0.85);
         for (let y = mrzY0; y < h; y++) {
             for (let x = 0; x < w; x++) {
                 const i = (y * w + x) * 4;
-                data[i] = 220; data[i + 1] = 220; data[i + 2] = 220; data[i + 3] = 255;
+                data[i] = 220;
+                data[i + 1] = 220;
+                data[i + 2] = 220;
+                data[i + 3] = 255;
             }
         }
         const img: ImageDataLike = { data: new Uint8ClampedArray(data), width: w, height: h };

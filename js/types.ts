@@ -100,34 +100,34 @@ export type Verdict = 'authentic' | 'suspicious' | 'tampered';
 
 // ── Copy-Move ─────────────────────────────────────────────────────────────
 export interface CopyMoveResult {
-    score: number;           // 0–100, suspicion direction (inverted at report layer)
+    score: number; // 0–100, suspicion direction (inverted at report layer)
     matchCount: number;
     heatmapData: ImageDataLike | null;
 }
 
 // ── Resampling ────────────────────────────────────────────────────────────
 export interface ResamplingResult {
-    score: number;           // 0–100, suspicion direction
-    affectedRatio: number;   // 0.0–1.0 fraction of rows flagged
+    score: number; // 0–100, suspicion direction
+    affectedRatio: number; // 0.0–1.0 fraction of rows flagged
     heatmapData: ImageDataLike | null;
 }
 
 // ── Histogram Forensic ────────────────────────────────────────────────────
 export interface HistogramForensicResult {
-    score: number;           // 0–100, suspicion direction
-    r: Uint32Array;          // 256-bin red histogram
-    g: Uint32Array;          // 256-bin green histogram
-    b: Uint32Array;          // 256-bin blue histogram
-    holes: number;           // empty bins in range [16,240] across all 3 channels
-    combStrength: number;    // 0.0–1.0 regularity of gap pattern
+    score: number; // 0–100, suspicion direction
+    r: Uint32Array; // 256-bin red histogram
+    g: Uint32Array; // 256-bin green histogram
+    b: Uint32Array; // 256-bin blue histogram
+    holes: number; // empty bins in range [16,240] across all 3 channels
+    combStrength: number; // 0.0–1.0 regularity of gap pattern
 }
 
 // ── Document Structure ────────────────────────────────────────────────────
 export interface DocStructureResult {
-    score: number;           // 0–100, suspicion direction; 50 = neutral (no doc detected)
+    score: number; // 0–100, suspicion direction; 50 = neutral (no doc detected)
     mrzDetected: boolean;
-    regionConsistency: number;   // 0.0–1.0
-    photoZoneIntegrity: number;  // 0.0–1.0
+    regionConsistency: number; // 0.0–1.0
+    photoZoneIntegrity: number; // 0.0–1.0
 }
 
 export interface ForensicReport {

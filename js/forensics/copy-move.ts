@@ -17,7 +17,13 @@ function getLuma(data: Uint8ClampedArray, x: number, y: number, w: number, h: nu
  * Extract 16-element feature vector from a 16×16 block.
  * Divides the block into 4×4 sub-blocks and computes mean luma per sub-block.
  */
-function blockFeature(data: Uint8ClampedArray, w: number, h: number, bx: number, by: number): Float32Array {
+function blockFeature(
+    data: Uint8ClampedArray,
+    w: number,
+    h: number,
+    bx: number,
+    by: number,
+): Float32Array {
     const feat = new Float32Array(16);
     for (let sy = 0; sy < 4; sy++) {
         for (let sx = 0; sx < 4; sx++) {

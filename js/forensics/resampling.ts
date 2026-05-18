@@ -62,7 +62,7 @@ export function analyzeResampling(imageData: ImageDataLike): ResamplingResult {
     for (const y of flaggedRows) {
         for (let x = 0; x < w; x++) {
             const i = (y * w + x) * 4;
-            hmData[i]     = 255;
+            hmData[i] = 255;
             hmData[i + 1] = 140;
             hmData[i + 2] = 0;
             hmData[i + 3] = 160;

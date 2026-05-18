@@ -55,14 +55,18 @@ describe('analyzeResampling', () => {
     it('detects periodicity in a synthetic periodic-gradient image', () => {
         // Create image where every row's luma alternates with period 4
         // This simulates a classic resampling artifact pattern
-        const w = 64, h = 64;
+        const w = 64,
+            h = 64;
         const data = new Uint8ClampedArray(w * h * 4);
         for (let y = 0; y < h; y++) {
             for (let x = 0; x < w; x++) {
                 // Alternating pattern: 0, 128, 0, 128, ... → gradient repeats with period 2
                 const v = x % 2 === 0 ? 0 : 200;
                 const i = (y * w + x) * 4;
-                data[i] = v; data[i + 1] = v; data[i + 2] = v; data[i + 3] = 255;
+                data[i] = v;
+                data[i + 1] = v;
+                data[i + 2] = v;
+                data[i + 3] = 255;
             }
         }
         const img: ImageDataLike = { data, width: w, height: h };
