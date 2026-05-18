@@ -39,7 +39,8 @@ export function HistogramForensicModule({ result }: Props) {
                     <div className="flex h-[18px] flex-1 items-end gap-px overflow-hidden rounded-sm bg-bg-3">
                         {Array.from(result[key]).map((v, i) => (
                             <div
-                                key={i}
+                                // biome-ignore lint/suspicious/noArrayIndexKey: histogram bins use inherently stable indices
+                                key={`${key}-bin-${i}`}
                                 className="flex-1"
                                 style={{
                                     height: `${Math.round((v / maxVal) * 18)}px`,
