@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 
 // canvas.js expõe funções puras que aceitam {data: Uint8ClampedArray, width, height}
 // compatíveis com ImageData, testáveis em Node.js sem browser
-import { computeHistogram, sobelEdges } from '../js/canvas.js';
+import { computeHistogram, sobelEdges, amplifyDifferences } from '../js/canvas.js';
 
 function img(pixels, width, height) {
     return { data: new Uint8ClampedArray(pixels), width, height };
@@ -64,3 +64,27 @@ console.log('\n✅ computeHistogram OK');
 }
 
 console.log('\n✅ sobelEdges OK');
+
+// ── amplifyDifferences ────────────────────────────────────────
+{
+    // 3×3 imagem uniforme → sem diferenças para amplificar
+    const pixels = new Array(3 * 3 * 4).fill(0);
+    for (let i = 0; i < 9; i++) { pixels[i*4]=pixels[i*4+1]=pixels[i*4+2]=100; pixels[i*4+3]=255; }
+    const result = amplifyDifferences(img(pixels, 3, 3));
+    const center = (1 * 3 + 1) * 4;
+    assert.equal(result.data[center], 0, 'imagem uniforme: sem diferenças a amplificar');
+    console.log('✓ amplifyDifferences: imagem uniforme → saída zero');
+}
+{
+    // 3×3 com pixel central mais brilhante (100 → 200)
+    const pixels = new Array(3 * 3 * 4).fill(0);
+    for (let i = 0; i < 9; i++) { pixels[i*4]=pixels[i*4+1]=pixels[i*4+2]=100; pixels[i*4+3]=255; }
+    pixels[4*4]=pixels[4*4+1]=pixels[4*4+2]=200; // centro mais brilhante
+    const result = amplifyDifferences(img(pixels, 3, 3));
+    const center = (1 * 3 + 1) * 4;
+    assert.ok(result.data[center] > 0, 'pixel central mais brilhante deve ser amplificado');
+    assert.equal(result.data[center + 3], 255, 'canal alpha deve ser 255');
+    console.log('✓ amplifyDifferences: pixel diferente amplificado');
+}
+
+console.log('\n✅ amplifyDifferences OK');
