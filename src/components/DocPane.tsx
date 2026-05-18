@@ -130,9 +130,9 @@ export function DocPane({
         (e: WheelEvent) => {
             if (!imageElement) return;
             e.preventDefault();
-            dispatch({ type: 'SET_ZOOM', zoom: state.zoom + (e.deltaY < 0 ? 0.1 : -0.1) });
+            dispatch({ type: 'ADJUST_ZOOM', delta: e.deltaY < 0 ? 0.1 : -0.1 });
         },
-        [imageElement, state.zoom, dispatch],
+        [imageElement, dispatch],
     );
 
     // Drag and drop

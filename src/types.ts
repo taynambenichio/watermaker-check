@@ -77,6 +77,7 @@ export type AppAction =
     | { type: 'SET_TAB'; tab: ActiveTab }
     | { type: 'SET_GHOST_LEVEL'; index: number }
     | { type: 'SET_ZOOM'; zoom: number }
+    | { type: 'ADJUST_ZOOM'; delta: number }
     | { type: 'SET_CANVAS_MODE'; mode: CanvasMode }
     | { type: 'TOGGLE_BEFORE_AFTER' }
     | { type: 'SET_FILTER'; key: keyof Omit<FilterState, 'preset'>; value: number }
@@ -118,6 +119,14 @@ export function appReducer(state: AppState, action: AppAction): AppState {
             return {
                 ...state,
                 zoom: Math.max(0.5, Math.min(4, Math.round(action.zoom * 100) / 100)),
+            };
+        case 'ADJUST_ZOOM':
+            return {
+                ...state,
+                zoom: Math.max(
+                    0.5,
+                    Math.min(4, Math.round((state.zoom + action.delta) * 100) / 100),
+                ),
             };
         case 'SET_CANVAS_MODE':
             return { ...state, canvasMode: action.mode };
