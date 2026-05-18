@@ -74,6 +74,30 @@ describe('ForensicsContent', () => {
                             flags: [],
                             isAcceptable: true,
                         },
+                        copyMoveResult: {
+                            score: 0,
+                            matchCount: 0,
+                            heatmapData: null,
+                        },
+                        resamplingResult: {
+                            score: 0,
+                            affectedRatio: 0,
+                            heatmapData: null,
+                        },
+                        histogramResult: {
+                            score: 0,
+                            r: new Uint32Array(256),
+                            g: new Uint32Array(256),
+                            b: new Uint32Array(256),
+                            holes: 0,
+                            combStrength: 0,
+                        },
+                        docStructureResult: {
+                            score: 50,
+                            mrzDetected: false,
+                            regionConsistency: 0,
+                            photoZoneIntegrity: 0,
+                        },
                         report: {
                             totalScore: 100,
                             verdict: 'authentic',
@@ -81,6 +105,10 @@ describe('ForensicsContent', () => {
                             exif: 100,
                             noise: 100,
                             ghost: 100,
+                            copyMove: 100,
+                            resampling: 100,
+                            histogram: 100,
+                            docStructure: 50,
                             completedAt: Date.now(),
                         },
                     },
@@ -144,6 +172,30 @@ describe('ForensicsContent', () => {
                             flags: [],
                             isAcceptable: true,
                         },
+                        copyMoveResult: {
+                            score: 0,
+                            matchCount: 0,
+                            heatmapData: null,
+                        },
+                        resamplingResult: {
+                            score: 0,
+                            affectedRatio: 0,
+                            heatmapData: null,
+                        },
+                        histogramResult: {
+                            score: 0,
+                            r: new Uint32Array(256),
+                            g: new Uint32Array(256),
+                            b: new Uint32Array(256),
+                            holes: 0,
+                            combStrength: 0,
+                        },
+                        docStructureResult: {
+                            score: 50,
+                            mrzDetected: false,
+                            regionConsistency: 0,
+                            photoZoneIntegrity: 0,
+                        },
                         report: {
                             totalScore: 39,
                             verdict: 'tampered',
@@ -151,6 +203,10 @@ describe('ForensicsContent', () => {
                             exif: 50,
                             noise: 58,
                             ghost: 33,
+                            copyMove: 80,
+                            resampling: 75,
+                            histogram: 90,
+                            docStructure: 50,
                             completedAt: Date.now(),
                         },
                     },
@@ -167,5 +223,9 @@ describe('ForensicsContent', () => {
         expect(html).toContain('Qualidade de Captura');
         expect(html).toContain('Error Level Analysis');
         expect(html).toContain('Software detectado');
+        expect(html).toContain('Detecção Copy-Move');
+        expect(html).toContain('Reamostramento');
+        expect(html).toContain('Análise Histograma RGB');
+        expect(html).toContain('Estrutura do Documento');
     });
 });
