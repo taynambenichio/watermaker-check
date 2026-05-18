@@ -25,6 +25,9 @@ export function initUpload(state, onImageLoaded) {
             onImageLoaded(currentImage);
         };
         currentImage.src = src;
+        if (currentImage.complete && currentImage.naturalHeight !== 0) {
+            currentImage.onload();
+        }
     }
 
     function loadFile(file) {
