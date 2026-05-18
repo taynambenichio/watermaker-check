@@ -148,7 +148,7 @@ function initBeforeAfter() {
         state.beforeAfterActive ? deactivate() : activate()
     );
 
-    divider.addEventListener('mousedown', e => { dragging = true; e.preventDefault(); });
+    divider.addEventListener('mousedown', e => { if (!state.beforeAfterActive) return; dragging = true; e.preventDefault(); });
     window.addEventListener('mouseup',   () => { dragging = false; });
     window.addEventListener('mousemove', e => {
         if (!dragging || !state.beforeAfterActive) return;
@@ -169,7 +169,7 @@ function initExport() {
         try {
             ctx.drawImage(state.image, 0, 0);
             const overlay = document.getElementById('canvasOverlay');
-            if (overlay.style.display !== 'none') {
+            if (getComputedStyle(overlay).display !== 'none') {
                 ctx.filter = 'none';
                 ctx.drawImage(overlay, 0, 0, tmp.width, tmp.height);
             }
