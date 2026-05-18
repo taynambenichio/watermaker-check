@@ -105,10 +105,11 @@ export function appReducer(state: AppState, action: AppAction): AppState {
                 ...state,
                 isAnalyzing: false,
                 forensicResult: action.result,
+                elaScore: action.result.elaScore,
                 ghostLevelIndex: 0,
             };
         case 'ANALYSIS_ERROR':
-            return { ...state, isAnalyzing: false };
+            return { ...state, isAnalyzing: false, progress: {} };
         case 'SET_TAB':
             return { ...state, activeTab: action.tab };
         case 'SET_GHOST_LEVEL':

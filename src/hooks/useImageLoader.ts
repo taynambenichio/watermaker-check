@@ -47,6 +47,7 @@ export function useImageLoader(onLoaded: (data: LoadedImage) => void) {
                     sourceFile: new File([], url.split('/').pop() ?? 'image'),
                     objectUrl: url,
                 });
+            img.onerror = () => console.error('[useImageLoader] Failed to load URL:', url);
             img.src = url;
         },
         [onLoaded],
