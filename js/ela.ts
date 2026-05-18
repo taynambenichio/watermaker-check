@@ -24,7 +24,7 @@ function thermalPalette(magnitude: number): [number, number, number] {
         const t = (m - 128) / 64;
         return [Math.round(255 * t), Math.round(255 * (1 - t)), 0];
     } else {
-        const t = (m - 192) / 63;
+        const t = (m - 192) / 63; // intentional: ensures m=255 → t=1.0 → pure white [255,255,255]
         return [255, Math.round(255 * t), Math.round(255 * t)];
     }
 }
@@ -43,7 +43,18 @@ export function computeELA(
     recompressed: ImageDataLike,
     amplification: number = 10,
 ): ELAResult {
+    if (original.width !== recompressed.width || original.height !== recompressed.height) {
+        throw new Error(
+            `computeELA: dimension mismatch (${original.width}×${original.height} vs ${recompressed.width}×${recompressed.height})`,
+        );
+    }
+
     const numPixels = original.width * original.height;
+
+    if (numPixels === 0) {
+        return { imageData: { data: new Uint8ClampedArray(0), width: 0, height: 0 }, score: 0 };
+    }
+
     const out = new Uint8ClampedArray(numPixels * 4);
     let totalMagnitude = 0;
 

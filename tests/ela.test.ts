@@ -16,6 +16,7 @@ describe('computeELA', () => {
         expect(imageData.data[1]).toBe(0); // px0 G
         expect(imageData.data[2]).toBe(255); // px0 B
         expect(imageData.data[4]).toBe(0); // px1 R
+        expect(imageData.data[5]).toBe(0); // px1 G
         expect(imageData.data[6]).toBe(255); // px1 B
     });
 
@@ -55,5 +56,25 @@ describe('computeELA', () => {
         // diff=765, amp=1, magnitude=255 → mean=255 → score=round(255/255*100)=100
         const { score } = computeELA(img([255, 255, 255, 255], 1, 1), img([0, 0, 0, 255], 1, 1), 1);
         expect(score).toBe(100);
+    });
+
+    it('uses default amplification of 10 when not specified', () => {
+        const orig = img([10, 0, 0, 255], 1, 1);
+        const recomp = img([0, 0, 0, 255], 1, 1);
+        const { imageData } = computeELA(orig, recomp); // no 3rd argument
+        // diff=10, amp=10 → magnitude=100 → blue→green lerp zone
+        expect(imageData.data[3]).toBe(255); // alpha
+    });
+
+    it('throws on dimension mismatch', () => {
+        const a = img([100, 100, 100, 255], 2, 1);
+        const b = img([100, 100, 100, 255], 1, 1);
+        expect(() => computeELA(a, b, 10)).toThrow('dimension mismatch');
+    });
+
+    it('returns score=0 for zero-dimension image', () => {
+        const empty: ImageDataLike = { data: new Uint8ClampedArray(0), width: 0, height: 0 };
+        const { score } = computeELA(empty, empty, 10);
+        expect(score).toBe(0);
     });
 });
