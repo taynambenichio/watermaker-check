@@ -1,33 +1,6 @@
-import { useEffect, useRef } from 'react';
-import type { ImageDataLike } from '../../../js/types.js';
 import type { AppState } from '../../types.ts';
+import { HeatmapCanvas } from '../forensics/HeatmapCanvas.tsx';
 import { scoreColor } from '../forensics/scoreColor.ts';
-
-function HeatmapCanvas({ heatmapData }: { heatmapData: ImageDataLike }) {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        canvas.width = heatmapData.width;
-        canvas.height = heatmapData.height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        const imgData = new ImageData(
-            new Uint8ClampedArray(heatmapData.data),
-            heatmapData.width,
-            heatmapData.height,
-        );
-        ctx.putImageData(imgData, 0, 0);
-    }, [heatmapData]);
-
-    return (
-        <canvas
-            ref={canvasRef}
-            className="block w-full overflow-hidden rounded-sm border border-border"
-        />
-    );
-}
 
 interface CopyMoveTabProps {
     state: AppState;
@@ -47,8 +20,6 @@ export function CopyMoveTab({ state }: CopyMoveTabProps) {
         );
     }
 
-    const color = score !== null ? scoreColor(score) : '#5a5750';
-
     return (
         <div className="flex flex-col gap-3 p-3">
             <p className="text-xs text-text-3">
@@ -58,7 +29,10 @@ export function CopyMoveTab({ state }: CopyMoveTabProps) {
             {score !== null && (
                 <div className="flex items-center gap-2">
                     <span className="text-xs text-text-3">Score:</span>
-                    <span className="font-mono text-sm font-bold" style={{ color }}>
+                    <span
+                        className="font-mono text-sm font-bold"
+                        style={{ color: scoreColor(score) }}
+                    >
                         {score}
                     </span>
                     <span className="text-xs text-text-3">
