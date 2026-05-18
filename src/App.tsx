@@ -1,5 +1,6 @@
 import { type ChangeEvent, useCallback, useEffect, useReducer, useRef } from 'react';
 import { DocPane } from './components/DocPane.tsx';
+import { ForensicsContent } from './components/forensics/ForensicsContent.tsx';
 import { TabBar } from './components/layout/TabBar.tsx';
 import { TopBar } from './components/layout/TopBar.tsx';
 import { useForensics } from './hooks/useForensics.ts';
@@ -67,8 +68,14 @@ export default function App() {
                     fileInputRef={fileInputRef}
                     onFileInputChange={handleFileInputChange}
                 />
-                <aside className="w-[360px] shrink-0 border-l border-border bg-bg-1 flex items-center justify-center text-text-3 text-sm">
-                    RightPanel — Task 6
+                <aside className="flex w-[360px] shrink-0 flex-col overflow-hidden border-l border-border bg-bg-1">
+                    {state.activeTab === 'forensics' ? (
+                        <ForensicsContent state={state} dispatch={dispatch} />
+                    ) : (
+                        <div className="flex h-full items-center justify-center px-6 text-center text-sm text-text-3">
+                            Painel disponível nas próximas tarefas
+                        </div>
+                    )}
                 </aside>
             </main>
         </div>

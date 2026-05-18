@@ -1,0 +1,83 @@
+import type { Dispatch } from 'react';
+import type { AppAction, AppState } from '../../types.ts';
+import { ModuleCard } from './ModuleCard.tsx';
+import { ExifModule } from './modules/ExifModule.tsx';
+import { GhostModule } from './modules/GhostModule.tsx';
+import { NoiseModule } from './modules/NoiseModule.tsx';
+import { QualityModule } from './modules/QualityModule.tsx';
+import { VerdictBlock } from './VerdictBlock.tsx';
+
+interface ForensicsContentProps {
+    state: AppState;
+    dispatch: Dispatch<AppAction>;
+}
+
+export function ForensicsContent({ state, dispatch }: ForensicsContentProps) {
+    const { forensicResult, isAnalyzing, progress, ghostLevelIndex, imageElement } = state;
+    const report = forensicResult?.report ?? null;
+
+    const imageWidth = imageElement?.naturalWidth ?? 0;
+    const imageHeight = imageElement?.naturalHeight ?? 0;
+
+    return (
+        <div className="flex h-full flex-col">
+            <VerdictBlock report={report} isAnalyzing={isAnalyzing} progress={progress} />
+
+            {forensicResult && (
+                <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-3">
+                    <ModuleCard
+                        title="Metadados EXIF"
+                        score={forensicResult.exif.score}
+                        icon="🗂"
+                        defaultOpen
+                    >
+                        <ExifModule result={forensicResult.exif} />
+                    </ModuleCard>
+
+                    <ModuleCard
+                        title="Inconsistência de Ruído"
+                        score={forensicResult.noise.score}
+                        icon="🌊"
+                    >
+                        <NoiseModule
+                            result={forensicResult.noise}
+                            imageWidth={imageWidth}
+                            imageHeight={imageHeight}
+                        />
+                    </ModuleCard>
+
+                    <ModuleCard title="JPEG Ghost" score={forensicResult.ghost.score} icon="👻">
+                        <GhostModule
+                            result={forensicResult.ghost}
+                            levelIndex={ghostLevelIndex}
+                            onLevelChange={(index) => dispatch({ type: 'SET_GHOST_LEVEL', index })}
+                        />
+                    </ModuleCard>
+
+                    <ModuleCard
+                        title="Qualidade de Captura"
+                        icon="📷"
+                        isQuality
+                        isAcceptable={forensicResult.quality.isAcceptable}
+                    >
+                        <QualityModule result={forensicResult.quality} />
+                    </ModuleCard>
+
+                    <ModuleCard
+                        title="Error Level Analysis"
+                        score={forensicResult.elaScore}
+                        icon="🔬"
+                    >
+                        <p className="text-xs text-text-3">
+                            Score ELA:{' '}
+                            <span className="font-mono text-blue">{forensicResult.elaScore}</span> —{' '}
+                            Use a aba ELA para visualização detalhada.
+                        </p>
+                    </ModuleCard>
+                </div>
+            )}
+
+            {!forensicResult && !isAnalyzing && <div className="flex-1" />}
+        </div>
+    );
+}

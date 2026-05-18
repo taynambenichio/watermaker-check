@@ -105,6 +105,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
             return {
                 ...state,
                 isAnalyzing: false,
+                progress: {},
                 forensicResult: action.result,
                 elaScore: action.result.elaScore,
                 ghostLevelIndex: 0,
