@@ -470,3 +470,46 @@ body {
     border-radius: 6px;
     background: rgba(0,0,0,0.3);
 }
+
+/* ── Forensics panel ──────────────────────────────────────────────────── */
+.forensics-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0f1a2f;
+    padding: 8px 12px;
+    border-radius: 4px 4px 0 0;
+    font-size: 0.85em;
+    font-weight: bold;
+    color: #93c5fd;
+    border: 1px solid #374151;
+    border-bottom: none;
+}
+
+.forensics-section-body {
+    border: 1px solid #374151;
+    border-radius: 0 0 4px 4px;
+    padding: 10px 12px;
+    background: #0a0f14;
+    font-size: 0.85em;
+}
+
+.forensics-badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8em;
+    font-weight: normal;
+}
+
+.forensics-badge-green  { background: #1a3a1a; color: #86efac; }
+.forensics-badge-amber  { background: #2a1a00; color: #fbbf24; }
+.forensics-badge-red    { background: #1a0a0a; color: #f87171; }
+.forensics-badge-grey   { background: #1a1a2e; color: #9ca3af; }
+
+.forensics-exif-table { width: 100%; border-collapse: collapse; }
+.forensics-exif-table td { padding: 4px 6px; color: #d1d5db; vertical-align: top; }
+.forensics-exif-table td:first-child { color: #6b7280; white-space: nowrap; padding-right: 12px; }
+.forensics-flag-row { display: flex; align-items: flex-start; gap: 6px; margin-top: 6px; color: #fbbf24; font-size: 0.82em; }
+.forensics-score-card { background: #0f1a2f; border: 1px solid #374151; border-radius: 6px; padding: 8px 10px; }
+.forensics-score-card-label { color: #6b7280; font-size: 0.8em; margin-bottom: 2px; }
+.forensics-score-card-value { font-weight: bold; font-size: 1.1em; }

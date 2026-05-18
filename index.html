@@ -40,6 +40,7 @@
                     <button class="tab-btn" data-tab="canvas">🔬 Canvas</button>
                     <button class="tab-btn" data-tab="tools">🛠 Tools</button>
                     <button class="tab-btn" data-tab="ela">🔬 ELA</button>
+                    <button class="tab-btn" data-tab="forensics">🔍 Forense</button>
                 </div>
 
                 <!-- Tab: Filtros CSS -->
@@ -138,6 +139,86 @@
                     </div>
                     <div id="elaCanvasContainer" style="display:none; margin-top: 16px; overflow:auto;">
                         <canvas id="elaCanvas" style="max-width:100%; display:block;"></canvas>
+                    </div>
+                </div>
+
+                <!-- Tab: Forense -->
+                <div class="tab-content" data-tab="forensics">
+                    <p class="tab-description">Pipeline forense completo — EXIF · Ruído · Ghost · ELA → Score de autenticidade</p>
+
+                    <!-- Progress indicator (hidden until analysis starts) -->
+                    <div id="forensicsProgress" style="display:none;margin-bottom:14px">
+                        <div id="forensicsProgressLabel" style="font-size:0.85em;color:#9ca3af">A analisar…</div>
+                        <div style="height:4px;background:#1a2a1a;border-radius:2px;margin-top:6px">
+                            <div id="forensicsProgressBar" style="width:0%;height:4px;background:#22c55e;border-radius:2px;transition:width 0.3s"></div>
+                        </div>
+                    </div>
+
+                    <!-- Shown before any image is loaded -->
+                    <div id="forensicsPlaceholder" style="color:#6b7280;font-size:0.9em;padding:12px 0">
+                        Carregue uma imagem para iniciar a análise forense automática.
+                    </div>
+
+                    <!-- Re-run button (hidden until first result) -->
+                    <button class="canvas-btn" id="forensicsRerunBtn" style="display:none;margin-bottom:14px" disabled>↺ Re-analisar</button>
+
+                    <!-- EXIF section -->
+                    <div id="forensicsExifSection" style="display:none;margin-bottom:10px">
+                        <div class="forensics-section-header">
+                            <span>🗂 Metadados EXIF</span>
+                            <span id="forensicsExifBadge" class="forensics-badge forensics-badge-grey"></span>
+                        </div>
+                        <div id="forensicsExifBody" class="forensics-section-body"></div>
+                    </div>
+
+                    <!-- Noise section -->
+                    <div id="forensicsNoiseSection" style="display:none;margin-bottom:10px">
+                        <div class="forensics-section-header">
+                            <span>🌊 Inconsistência de Ruído</span>
+                            <span id="forensicsNoiseBadge" class="forensics-badge forensics-badge-grey"></span>
+                        </div>
+                        <div class="forensics-section-body">
+                            <div id="forensicsNoiseBody"></div>
+                            <canvas id="noiseCanvas" style="max-width:100%;display:block;margin-top:8px;border-radius:4px"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Ghost section -->
+                    <div id="forensicsGhostSection" style="display:none;margin-bottom:10px">
+                        <div class="forensics-section-header">
+                            <span>👻 JPEG Ghost</span>
+                            <span id="forensicsGhostBadge" class="forensics-badge forensics-badge-grey"></span>
+                        </div>
+                        <div class="forensics-section-body">
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                                <span style="color:#9ca3af">Qualidade:</span>
+                                <span id="ghostQualityLabel" style="color:#60a5fa;font-weight:bold">Q 50</span>
+                                <input type="range" id="ghostQualitySlider" min="0" max="3" value="0" style="flex:1">
+                            </div>
+                            <canvas id="ghostCanvas" style="max-width:100%;display:block;border-radius:4px"></canvas>
+                            <div id="forensicsGhostBody" style="margin-top:6px"></div>
+                        </div>
+                    </div>
+
+                    <!-- Report section -->
+                    <div id="forensicsReportSection" style="display:none">
+                        <div class="forensics-section-header">
+                            <span>📋 Relatório de Autenticidade</span>
+                            <span id="forensicsReportBadge" class="forensics-badge forensics-badge-grey"></span>
+                        </div>
+                        <div class="forensics-section-body">
+                            <div id="forensicsScoreGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px"></div>
+                            <div style="margin-bottom:10px">
+                                <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                                    <span style="color:#9ca3af">Score total</span>
+                                    <span id="forensicsTotalScore" style="font-weight:bold"></span>
+                                </div>
+                                <div style="height:6px;background:#1a1a1a;border-radius:3px">
+                                    <div id="forensicsScoreBar" style="height:6px;border-radius:3px;transition:width 0.5s"></div>
+                                </div>
+                            </div>
+                            <button class="canvas-btn" id="forensicsExportBtn" style="width:100%">💾 Exportar relatório JSON</button>
+                        </div>
                     </div>
                 </div>
             </div>
