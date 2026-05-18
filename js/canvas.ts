@@ -23,6 +23,7 @@ export function sobelEdges({ data, width, height }: ImageDataLike): ImageDataLik
     }
 
     const out = new Uint8ClampedArray(width * height * 4);
+    for (let i = 3; i < out.length; i += 4) out[i] = 255;
     const px = (row: number, col: number): number => gray[row * width + col] ?? 0;
 
     for (let y = 1; y < height - 1; y++) {
@@ -43,6 +44,7 @@ export function sobelEdges({ data, width, height }: ImageDataLike): ImageDataLik
 
 export function amplifyDifferences({ data, width, height }: ImageDataLike): ImageDataLike {
     const out = new Uint8ClampedArray(data.length);
+    for (let i = 3; i < out.length; i += 4) out[i] = 255;
     for (let y = 1; y < height - 1; y++) {
         for (let x = 1; x < width - 1; x++) {
             const idx = (y * width + x) * 4;
@@ -74,24 +76,28 @@ export function renderHistogram(imageData: ImageDataLike, histCanvas: HTMLCanvas
     const maxVal = Math.max(...Array.from(r), ...Array.from(g), ...Array.from(b)) || 1;
     const barW = W / 256;
     ctx.globalAlpha = 0.7;
-    for (let i = 0; i < 256; i++) {
-        const x = i * barW;
-        ctx.fillStyle = '#e57373';
-        ctx.fillRect(x, H - (r[i]! / maxVal) * H, barW, (r[i]! / maxVal) * H);
-        ctx.fillStyle = '#81c784';
-        ctx.fillRect(x, H - (g[i]! / maxVal) * H, barW, (g[i]! / maxVal) * H);
-        ctx.fillStyle = '#64b5f6';
-        ctx.fillRect(x, H - (b[i]! / maxVal) * H, barW, (b[i]! / maxVal) * H);
+    try {
+        for (let i = 0; i < 256; i++) {
+            const x = i * barW;
+            ctx.fillStyle = '#e57373';
+            ctx.fillRect(x, H - (r[i]! / maxVal) * H, barW, (r[i]! / maxVal) * H);
+            ctx.fillStyle = '#81c784';
+            ctx.fillRect(x, H - (g[i]! / maxVal) * H, barW, (g[i]! / maxVal) * H);
+            ctx.fillStyle = '#64b5f6';
+            ctx.fillRect(x, H - (b[i]! / maxVal) * H, barW, (b[i]! / maxVal) * H);
+        }
+    } finally {
+        ctx.globalAlpha = 1;
     }
-    ctx.globalAlpha = 1;
 }
 
 function captureImage(img: HTMLImageElement): ImageDataLike {
     const tmp = document.createElement('canvas');
     tmp.width  = img.naturalWidth;
     tmp.height = img.naturalHeight;
-    tmp.getContext('2d')!.drawImage(img, 0, 0);
-    return tmp.getContext('2d')!.getImageData(0, 0, tmp.width, tmp.height);
+    const ctx  = tmp.getContext('2d')!;
+    ctx.drawImage(img, 0, 0);
+    return ctx.getImageData(0, 0, tmp.width, tmp.height);
 }
 
 function putResultOnCanvas(result: ImageDataLike, overlayCanvas: HTMLCanvasElement): void {
