@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { type ChangeEvent, useCallback, useEffect, useReducer, useRef } from 'react';
+import { DocPane } from './components/DocPane.tsx';
 import { TabBar } from './components/layout/TabBar.tsx';
 import { TopBar } from './components/layout/TopBar.tsx';
 import { useForensics } from './hooks/useForensics.ts';
@@ -7,10 +8,9 @@ import { appReducer, initialAppState } from './types.ts';
 
 export default function App() {
     const [state, dispatch] = useReducer(appReducer, initialAppState);
-    // biome-ignore lint/correctness/noUnusedVariables: wired in Task 5
     const imageRef = useRef<HTMLImageElement>(null);
-    // biome-ignore lint/correctness/noUnusedVariables: wired in Task 5
     const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { analyze } = useForensics(dispatch);
 
@@ -21,7 +21,7 @@ export default function App() {
         [],
     );
 
-    const { loadFile: _loadFile, loadUrl: _loadUrl } = useImageLoader(handleImageLoaded);
+    const { loadFile, loadUrl } = useImageLoader(handleImageLoaded);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: auto-analyze only when a new image loads; broader deps can retrigger after analysis errors
     useEffect(() => {
@@ -34,6 +34,20 @@ export default function App() {
         if (state.imageElement) analyze(state.imageElement, state.sourceFile);
     }, [state.imageElement, state.sourceFile, analyze]);
 
+    const handleFileSelect = useCallback(() => fileInputRef.current?.click(), []);
+    const handleSampleLoad = useCallback(() => loadUrl('example.png'), [loadUrl]);
+    const handleFileInputChange = useCallback(
+        (e: ChangeEvent<HTMLInputElement>) => {
+            const file = e.target.files?.[0];
+            if (file) {
+                void loadFile(file).catch((error) => {
+                    console.error('[App] Failed to load selected file:', error);
+                });
+            }
+        },
+        [loadFile],
+    );
+
     return (
         <div className="h-screen w-screen flex flex-col overflow-hidden bg-bg font-sans text-text">
             <TopBar state={state} onReanalyze={handleReanalyze} />
@@ -42,9 +56,17 @@ export default function App() {
                 onTabChange={(tab) => dispatch({ type: 'SET_TAB', tab })}
             />
             <main className="flex flex-1 overflow-hidden">
-                <div className="flex-1 bg-bg flex items-center justify-center text-text-3 text-sm">
-                    DocPane — Task 5
-                </div>
+                <DocPane
+                    state={state}
+                    dispatch={dispatch}
+                    imageRef={imageRef}
+                    overlayCanvasRef={overlayCanvasRef}
+                    onFileDrop={loadFile}
+                    onSampleLoad={handleSampleLoad}
+                    onFileSelect={handleFileSelect}
+                    fileInputRef={fileInputRef}
+                    onFileInputChange={handleFileInputChange}
+                />
                 <aside className="w-[360px] shrink-0 border-l border-border bg-bg-1 flex items-center justify-center text-text-3 text-sm">
                     RightPanel — Task 6
                 </aside>
