@@ -7,8 +7,10 @@ import { appReducer, initialAppState } from './types.ts';
 
 export default function App() {
     const [state, dispatch] = useReducer(appReducer, initialAppState);
-    const _imageRef = useRef<HTMLImageElement>(null);
-    const _overlayCanvasRef = useRef<HTMLCanvasElement>(null);
+    // biome-ignore lint/correctness/noUnusedVariables: wired in Task 5
+    const imageRef = useRef<HTMLImageElement>(null);
+    // biome-ignore lint/correctness/noUnusedVariables: wired in Task 5
+    const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
 
     const { analyze } = useForensics(dispatch);
 
