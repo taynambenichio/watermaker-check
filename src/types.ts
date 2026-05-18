@@ -1,6 +1,13 @@
 import type { ForensicPipelineResult, PipelineStep } from '../js/types.js';
 
-export type ActiveTab = 'forensics' | 'filters' | 'canvas' | 'ela' | 'tools';
+export type ActiveTab =
+    | 'forensics'
+    | 'filters'
+    | 'canvas'
+    | 'ela'
+    | 'tools'
+    | 'copy-move'
+    | 'resampling';
 export type CanvasMode = 'histogram' | 'sobel' | 'amplify' | null;
 
 export interface FilterState {
