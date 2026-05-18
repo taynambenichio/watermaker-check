@@ -48,7 +48,7 @@ export interface ExifResult {
 // ── Noise ─────────────────────────────────────────────────────────────────
 export interface NoiseResult {
     score: number;
-    blockMap: Float32Array;  // normalised 0–1 variance per block
+    blockMap: Float32Array; // normalised 0–1 variance per block
     gridW: number;
     gridH: number;
     suspiciousBlockCount: number;
@@ -57,9 +57,9 @@ export interface NoiseResult {
 
 // ── Ghost ─────────────────────────────────────────────────────────────────
 export interface GhostLevel {
-    quality: number;                  // 50 | 65 | 80 | 95
-    imageData: ImageDataLike;         // greyscale diff heatmap
-    meanDiff: number;                 // mean absolute diff (amplified)
+    quality: number; // 50 | 65 | 80 | 95
+    imageData: ImageDataLike; // greyscale diff heatmap
+    meanDiff: number; // mean absolute diff (amplified)
 }
 
 export interface GhostResult {
