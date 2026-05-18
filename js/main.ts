@@ -1,4 +1,5 @@
 import { clearOverlay, renderAmplify, renderHistogram, renderSobel } from './canvas.js';
+import { renderELA } from './ela.js';
 import { applyFilters, initFilters } from './filters.js';
 import type { AppState } from './types.js';
 import { enableImageTools, initTabs, initUpload, updateAnalysisPanel } from './ui.js';
@@ -35,6 +36,8 @@ function onImageLoaded(img: HTMLImageElement): void {
     const overlay = getEl<HTMLCanvasElement>('canvasOverlay');
     clearOverlay(overlay);
     getEl<HTMLElement>('histogramContainer').style.display = 'none';
+    getEl<HTMLElement>('elaCanvasContainer').style.display = 'none';
+    getEl<HTMLElement>('elaSuspicionScore').style.display = 'none';
     getEl<HTMLElement>('beforeAfterDivider').style.display = 'none';
     getEl<HTMLElement>('beforeImage').style.display = 'none';
     img.style.clipPath = '';
@@ -219,6 +222,45 @@ function initExport(): void {
     });
 }
 
+function initElaTab(): void {
+    const elaBtn = getEl<HTMLButtonElement>('elaBtn');
+    const elaSlider = getEl<HTMLInputElement>('elaAmplification');
+    const elaSliderValue = getEl<HTMLElement>('elaAmplificationValue');
+    const elaScore = getEl<HTMLElement>('elaSuspicionScore');
+    const elaScoreValue = getEl<HTMLElement>('elaScoreValue');
+    const elaCanvasContainer = getEl<HTMLElement>('elaCanvasContainer');
+    const elaCanvas = getEl<HTMLCanvasElement>('elaCanvas');
+
+    elaSlider.addEventListener('input', () => {
+        elaSliderValue.textContent = elaSlider.value;
+    });
+
+    elaBtn.addEventListener('click', () => {
+        if (!state.image) return;
+        elaBtn.disabled = true;
+        elaBtn.textContent = '⏳ Analisando...';
+        renderELA(state.image, elaCanvas, parseInt(elaSlider.value, 10))
+            .then((score) => {
+                elaCanvasContainer.style.display = '';
+                elaScore.style.display = '';
+                const label =
+                    score < 30 ? `🟢 ${score}%` : score < 60 ? `🟡 ${score}%` : `🔴 ${score}%`;
+                elaScoreValue.textContent = label;
+                state.activeCanvasMode = 'ela';
+                updateAnalysisPanel(state);
+            })
+            .catch((e: unknown) => {
+                if (e instanceof Error && e.name === 'SecurityError')
+                    alert('ELA não disponível para imagens de origem externa');
+                else alert(`Erro ao analisar: ${e instanceof Error ? e.message : String(e)}`);
+            })
+            .finally(() => {
+                elaBtn.disabled = false;
+                elaBtn.textContent = '🔬 Analisar ELA';
+            });
+    });
+}
+
 // Bootstrap
 initTabs();
 initUpload(state, onImageLoaded);
@@ -227,4 +269,5 @@ initCanvasTab();
 initZoom();
 initBeforeAfter();
 initExport();
+initElaTab();
 updateAnalysisPanel(state);
