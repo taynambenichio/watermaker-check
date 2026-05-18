@@ -1,10 +1,10 @@
 import type { Dispatch } from 'react';
 import type { AppAction, AppState } from '../../types.ts';
 import { ModuleCard } from './ModuleCard.tsx';
+import { DocStructureModule } from './modules/DocStructureModule.tsx';
 import { ExifModule } from './modules/ExifModule.tsx';
 import { GhostModule } from './modules/GhostModule.tsx';
 import { HistogramForensicModule } from './modules/HistogramForensicModule.tsx';
-import { DocStructureModule } from './modules/DocStructureModule.tsx';
 import { NoiseModule } from './modules/NoiseModule.tsx';
 import { QualityModule } from './modules/QualityModule.tsx';
 import { VerdictBlock } from './VerdictBlock.tsx';
