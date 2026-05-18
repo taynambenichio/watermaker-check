@@ -62,6 +62,7 @@ function initCanvasTab() {
             setCanvasMode('histogram', this);
         } catch (e) {
             if (e.name === 'SecurityError') alert('Análise Canvas não disponível para imagens externas');
+            else alert('Erro ao processar imagem: ' + e.message);
         }
     });
 
@@ -97,7 +98,13 @@ function initZoom() {
     function setZoom(z) {
         state.zoom = Math.max(0.5, Math.min(4, Math.round(z * 100) / 100));
         zoomLabel.textContent = Math.round(state.zoom * 100) + '%';
-        if (state.image) state.image.style.transform = `scale(${state.zoom})`;
+        if (!state.image) return;
+        state.image.style.transform = `scale(${state.zoom})`;
+        requestAnimationFrame(() => {
+            const overlay = document.getElementById('canvasOverlay');
+            if (getComputedStyle(overlay).display !== 'none') matchImageBounds(overlay);
+            if (state.beforeAfterActive) matchImageBounds(document.getElementById('beforeImage'));
+        });
     }
 
     document.getElementById('zoomInBtn').addEventListener('click',    () => setZoom(state.zoom + 0.25));
@@ -180,6 +187,8 @@ function initExport() {
         } catch (e) {
             if (e.name === 'SecurityError')
                 alert('Não é possível exportar imagens de origem externa');
+            else
+                alert('Erro ao exportar: ' + e.message);
         }
     });
 }
@@ -187,7 +196,7 @@ function initExport() {
 // Bootstrap
 initTabs();
 initUpload(state, onImageLoaded);
-initFilters(state);
+initFilters(state, () => updateAnalysisPanel(state));
 initCanvasTab();
 initZoom();
 initBeforeAfter();

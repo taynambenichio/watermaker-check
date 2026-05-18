@@ -50,17 +50,18 @@ export function applyPreset(name, state) {
     applyFilters(state);
 }
 
-export function initFilters(state) {
+export function initFilters(state, onUpdate = () => {}) {
     SLIDER_IDS.forEach(id => {
         document.getElementById(id).addEventListener('input', () => {
             updateValueDisplays();
             state.activePreset = null;
             document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
             applyFilters(state);
+            onUpdate(state);
         });
     });
     document.querySelectorAll('.preset-btn').forEach(btn => {
-        btn.addEventListener('click', () => applyPreset(btn.dataset.preset, state));
+        btn.addEventListener('click', () => { applyPreset(btn.dataset.preset, state); onUpdate(state); });
     });
-    document.getElementById('resetBtn').addEventListener('click', () => resetFilters(state));
+    document.getElementById('resetBtn').addEventListener('click', () => { resetFilters(state); onUpdate(state); });
 }

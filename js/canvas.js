@@ -108,6 +108,8 @@ export function renderSobel(img, overlayCanvas) {
     } catch (e) {
         if (e.name === 'SecurityError')
             alert('Análise Canvas não disponível para imagens externas');
+        else
+            alert('Erro ao processar imagem: ' + e.message);
     }
 }
 
@@ -117,6 +119,8 @@ export function renderAmplify(img, overlayCanvas) {
     } catch (e) {
         if (e.name === 'SecurityError')
             alert('Análise Canvas não disponível para imagens externas');
+        else
+            alert('Erro ao processar imagem: ' + e.message);
     }
 }
 
