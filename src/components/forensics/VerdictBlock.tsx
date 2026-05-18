@@ -2,21 +2,41 @@ import type { ForensicReport, PipelineStep } from '../../../js/types.js';
 import { ScoreRing } from './ScoreRing.tsx';
 import { scoreColor } from './scoreColor.ts';
 
-const STEPS: PipelineStep[] = ['exif', 'noise', 'ghost', 'ela', 'quality', 'report'];
+const STEPS: PipelineStep[] = [
+    'exif',
+    'noise',
+    'quality',
+    'ela',
+    'ghost',
+    'copy-move',
+    'resampling',
+    'histogram',
+    'doc-structure',
+    'report',
+];
+
 const STEP_LABELS: Record<PipelineStep, string> = {
     exif: 'Metadados EXIF',
     noise: 'Ruído',
     ghost: 'Ghost JPEG',
     ela: 'ELA',
     quality: 'Qualidade',
+    'copy-move': 'Copy-Move',
+    resampling: 'Reamostramento',
+    histogram: 'Histograma RGB',
+    'doc-structure': 'Estrutura Documento',
     report: 'Relatório',
 };
 
 const WEIGHTS = [
-    { key: 'ela' as const, label: 'ELA', weight: '×0.25' },
-    { key: 'ghost' as const, label: 'Ghost', weight: '×0.30' },
-    { key: 'noise' as const, label: 'Ruído', weight: '×0.25' },
-    { key: 'exif' as const, label: 'EXIF', weight: '×0.20' },
+    { key: 'copyMove' as const, label: 'Copy-Move', weight: '×0.20' },
+    { key: 'ghost' as const, label: 'Ghost', weight: '×0.15' },
+    { key: 'ela' as const, label: 'ELA', weight: '×0.15' },
+    { key: 'resampling' as const, label: 'Resampling', weight: '×0.15' },
+    { key: 'noise' as const, label: 'Ruído', weight: '×0.15' },
+    { key: 'exif' as const, label: 'EXIF', weight: '×0.10' },
+    { key: 'histogram' as const, label: 'Histograma', weight: '×0.05' },
+    { key: 'docStructure' as const, label: 'Doc. Struct', weight: '×0.05' },
 ];
 
 interface VerdictBlockProps {
