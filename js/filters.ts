@@ -25,7 +25,9 @@ const CSS_FN: Record<string, (v: string) => string> = {
 };
 
 function getEl<T extends HTMLElement>(id: string): T {
-    return document.getElementById(id) as T;
+    const el = document.getElementById(id);
+    if (!el) throw new Error(`Required element #${id} not found`);
+    return el as T;
 }
 
 function getFilterString(): string {

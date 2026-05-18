@@ -12,7 +12,9 @@ export const state: AppState = {
 };
 
 function getEl<T extends HTMLElement>(id: string): T {
-    return document.getElementById(id) as T;
+    const el = document.getElementById(id);
+    if (!el) throw new Error(`Required element #${id} not found`);
+    return el as T;
 }
 
 function matchImageBounds(el: HTMLElement): void {
@@ -61,8 +63,9 @@ function initCanvasTab(): void {
         tmp.width  = state.image.naturalWidth;
         tmp.height = state.image.naturalHeight;
         try {
-            tmp.getContext('2d')!.drawImage(state.image, 0, 0);
-            const imageData = tmp.getContext('2d')!.getImageData(0, 0, tmp.width, tmp.height);
+            const tmpCtx = tmp.getContext('2d')!;
+            tmpCtx.drawImage(state.image, 0, 0);
+            const imageData = tmpCtx.getImageData(0, 0, tmp.width, tmp.height);
             histContainer.style.display = '';
             renderHistogram(imageData, histCanvas);
             setCanvasMode('histogram', histogramBtn);
@@ -104,13 +107,15 @@ function initCanvasTab(): void {
 function initZoom(): void {
     const imageDisplay = getEl<HTMLElement>('imageDisplay');
     const zoomLabel    = getEl<HTMLElement>('zoomValue');
+    let zoomRafId      = 0;
 
     function setZoom(z: number): void {
         state.zoom = Math.max(0.5, Math.min(4, Math.round(z * 100) / 100));
         zoomLabel.textContent = Math.round(state.zoom * 100) + '%';
         if (!state.image) return;
         state.image.style.transform = `scale(${state.zoom})`;
-        requestAnimationFrame(() => {
+        cancelAnimationFrame(zoomRafId);
+        zoomRafId = requestAnimationFrame(() => {
             const overlay = getEl<HTMLCanvasElement>('canvasOverlay');
             if (getComputedStyle(overlay).display !== 'none') matchImageBounds(overlay);
             if (state.beforeAfterActive) matchImageBounds(getEl<HTMLImageElement>('beforeImage'));
