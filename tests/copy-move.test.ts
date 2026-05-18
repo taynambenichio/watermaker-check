@@ -7,7 +7,7 @@ function makeGradientImage(w: number, h: number): ImageDataLike {
     for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
             const i = (y * w + x) * 4;
-            data[i]     = (x * 4) % 256;
+            data[i] = (x * 4) % 256;
             data[i + 1] = (y * 4) % 256;
             data[i + 2] = 128;
             data[i + 3] = 255;
@@ -18,7 +18,8 @@ function makeGradientImage(w: number, h: number): ImageDataLike {
 
 describe('analyzeCopyMove', () => {
     it('returns matchCount > 0 for image with a manually cloned 16×16 block', () => {
-        const w = 64, h = 64;
+        const w = 64,
+            h = 64;
         const img = makeGradientImage(w, h);
         const data = img.data.slice();
         // Copy block at (0,0) onto block at (32,0) — identical pixel values → match
@@ -26,7 +27,7 @@ describe('analyzeCopyMove', () => {
             for (let px = 0; px < 16; px++) {
                 const src = (py * w + px) * 4;
                 const dst = (py * w + 32 + px) * 4;
-                data[dst]     = data[src];
+                data[dst] = data[src];
                 data[dst + 1] = data[src + 1];
                 data[dst + 2] = data[src + 2];
                 data[dst + 3] = 255;

@@ -30,6 +30,9 @@ function autocorr(signal: Float32Array, lag: number): number {
 }
 
 function hasPeriodicity(signal: Float32Array): boolean {
+    // Lag range 2-32: skips lag 1 (noise), caps at 32 (typical resampling factors)
+    // Threshold 0.15: empirically chosen; resampling artifacts show normalized autocorr > 0.15
+    // Min 3 peaks: reduces false positives from single coincidental correlations
     let peakCount = 0;
     for (let lag = 2; lag <= 32; lag++) {
         if (autocorr(signal, lag) > 0.15) peakCount++;
