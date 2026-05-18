@@ -70,4 +70,11 @@ describe('analyzeCopyMove', () => {
         expect(r.score).toBe(0);
         expect(r.matchCount).toBe(0);
     });
+
+    it('pristine gradient image has low matchCount (few natural similarities)', () => {
+        const img = makeGradientImage(64, 64);
+        const r = analyzeCopyMove(img);
+        // Natural images may have some similar blocks but not many
+        expect(r.matchCount).toBeLessThan(8);
+    });
 });
