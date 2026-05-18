@@ -33,6 +33,7 @@ export function initUpload(
         currentImage.onload = handleLoaded;
         currentImage.src    = src;
         if (currentImage.complete && currentImage.naturalHeight !== 0) {
+            currentImage.onload = null;
             handleLoaded();
         }
     }
@@ -63,7 +64,7 @@ export function initUpload(
         imageDisplay.style.borderColor = '#667eea';
     });
     imageDisplay.addEventListener('dragleave', (e: DragEvent) => {
-        e.preventDefault();
+        if (imageDisplay.contains(e.relatedTarget as Node)) return;
         imageDisplay.style.borderColor = 'rgba(255,255,255,0.3)';
     });
     imageDisplay.addEventListener('drop', (e: DragEvent) => {
