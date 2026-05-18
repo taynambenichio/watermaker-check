@@ -15,11 +15,10 @@ describe('computeHistogram', () => {
     });
 
     it('dois pixels', () => {
-        const h = computeHistogram(img([255, 0, 0, 255, 0, 0, 255, 255], 2, 1));
-        expect(h.r[255]).toBe(1);
-        expect(h.r[0]).toBe(1);
-        expect(h.b[255]).toBe(1);
-        expect(h.b[0]).toBe(1);
+        const h = computeHistogram(img([128, 64, 32, 255, 128, 64, 32, 255], 2, 1));
+        expect(h.r[128]).toBe(2);
+        expect(h.g[64]).toBe(2);
+        expect(h.b[32]).toBe(2);
     });
 
     it('256 valores únicos em R', () => {
@@ -65,7 +64,7 @@ describe('amplifyDifferences', () => {
     it('imagem uniforme → saída zero', () => {
         const pixels: number[] = new Array<number>(3 * 3 * 4).fill(0);
         for (let i = 0; i < 9; i++) {
-            pixels[i * 4] = pixels[i * 4 + 1] = pixels[i * 4 + 2] = 100;
+            pixels[i * 4] = pixels[i * 4 + 1] = pixels[i * 4 + 2] = 128;
             pixels[i * 4 + 3] = 255;
         }
         const result = amplifyDifferences(img(pixels, 3, 3));
@@ -76,7 +75,7 @@ describe('amplifyDifferences', () => {
     it('pixel diferente amplificado', () => {
         const pixels: number[] = new Array<number>(3 * 3 * 4).fill(0);
         for (let i = 0; i < 9; i++) {
-            pixels[i * 4] = pixels[i * 4 + 1] = pixels[i * 4 + 2] = 100;
+            pixels[i * 4] = pixels[i * 4 + 1] = pixels[i * 4 + 2] = 128;
             pixels[i * 4 + 3] = 255;
         }
         pixels[4 * 4] = pixels[4 * 4 + 1] = pixels[4 * 4 + 2] = 200;
