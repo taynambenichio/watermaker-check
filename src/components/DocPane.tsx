@@ -57,6 +57,9 @@ export function DocPane({
         if (imageRef.current) {
             imageRef.current.style.transform = `scale(${zoom})`;
         }
+        if (beforeImgRef.current) {
+            beforeImgRef.current.style.transform = `scale(${zoom})`;
+        }
     }, [zoom, imageRef]);
 
     const applyBeforeAfterClip = useCallback(
