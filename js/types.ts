@@ -23,7 +23,17 @@ export interface ImageDataLike {
 }
 
 // ── Pipeline progress ──────────────────────────────────────────────────────
-export type PipelineStep = 'exif' | 'noise' | 'ghost' | 'ela' | 'report' | 'quality';
+export type PipelineStep =
+    | 'exif'
+    | 'noise'
+    | 'ghost'
+    | 'ela'
+    | 'report'
+    | 'quality'
+    | 'copy-move'
+    | 'resampling'
+    | 'histogram'
+    | 'doc-structure';
 
 export type PipelineProgressCallback = (
     step: PipelineStep,
@@ -88,6 +98,38 @@ export interface QualityResult {
 // ── Report ────────────────────────────────────────────────────────────────
 export type Verdict = 'authentic' | 'suspicious' | 'tampered';
 
+// ── Copy-Move ─────────────────────────────────────────────────────────────
+export interface CopyMoveResult {
+    score: number;           // 0–100, suspicion direction (inverted at report layer)
+    matchCount: number;
+    heatmapData: ImageDataLike | null;
+}
+
+// ── Resampling ────────────────────────────────────────────────────────────
+export interface ResamplingResult {
+    score: number;           // 0–100, suspicion direction
+    affectedRatio: number;   // 0.0–1.0 fraction of rows flagged
+    heatmapData: ImageDataLike | null;
+}
+
+// ── Histogram Forensic ────────────────────────────────────────────────────
+export interface HistogramForensicResult {
+    score: number;           // 0–100, suspicion direction
+    r: Uint32Array;          // 256-bin red histogram
+    g: Uint32Array;          // 256-bin green histogram
+    b: Uint32Array;          // 256-bin blue histogram
+    holes: number;           // empty bins in range [16,240] across all 3 channels
+    combStrength: number;    // 0.0–1.0 regularity of gap pattern
+}
+
+// ── Document Structure ────────────────────────────────────────────────────
+export interface DocStructureResult {
+    score: number;           // 0–100, suspicion direction; 50 = neutral (no doc detected)
+    mrzDetected: boolean;
+    regionConsistency: number;   // 0.0–1.0
+    photoZoneIntegrity: number;  // 0.0–1.0
+}
+
 export interface ForensicReport {
     totalScore: number;
     verdict: Verdict;
@@ -95,6 +137,10 @@ export interface ForensicReport {
     exif: number;
     noise: number;
     ghost: number;
+    copyMove: number;
+    resampling: number;
+    histogram: number;
+    docStructure: number;
     completedAt: number;
 }
 
@@ -106,4 +152,8 @@ export interface ForensicPipelineResult {
     elaScore: number;
     quality: QualityResult;
     report: ForensicReport;
+    copyMoveResult: CopyMoveResult;
+    resamplingResult: ResamplingResult;
+    histogramResult: HistogramForensicResult;
+    docStructureResult: DocStructureResult;
 }
