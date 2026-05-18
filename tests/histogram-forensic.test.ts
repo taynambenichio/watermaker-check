@@ -5,7 +5,7 @@ import type { ImageDataLike } from '../js/types.js';
 function makeImageData(pixels: number[][]): ImageDataLike {
     const data = new Uint8ClampedArray(pixels.length * 4);
     for (let i = 0; i < pixels.length; i++) {
-        data[i * 4]     = pixels[i][0];
+        data[i * 4] = pixels[i][0];
         data[i * 4 + 1] = pixels[i][1];
         data[i * 4 + 2] = pixels[i][2];
         data[i * 4 + 3] = pixels[i][3] ?? 255;
@@ -35,7 +35,7 @@ describe('analyzeHistogramForensic', () => {
         const img = makeImageData(pixels);
         const r = analyzeHistogramForensic(img);
         // Odd bins in 16..240 are empty — should have many holes
-        expect(r.holes).toBeGreaterThan(5);
+        expect(r.holes).toBeGreaterThan(300);
     });
 
     it('returns zero holes for image with all 256 luminance values present', () => {
@@ -60,5 +60,23 @@ describe('analyzeHistogramForensic', () => {
         const r = analyzeHistogramForensic(img);
         expect(r.combStrength).toBeGreaterThanOrEqual(0);
         expect(r.combStrength).toBeLessThanOrEqual(1);
+    });
+
+    it('detects high combStrength for even-only histogram (comb pattern)', () => {
+        const pixels: number[][] = [];
+        for (let v = 1; v <= 255; v += 2) {
+            for (let j = 0; j < 5; j++) pixels.push([v, v, v, 255]);
+        }
+        const img = makeImageData(pixels);
+        const r = analyzeHistogramForensic(img);
+        expect(r.combStrength).toBeGreaterThan(0.3);
+    });
+
+    it('detects low combStrength for full-spectrum histogram', () => {
+        const pixels: number[][] = [];
+        for (let v = 0; v < 256; v++) pixels.push([v, v, v, 255]);
+        const img = makeImageData(pixels);
+        const r = analyzeHistogramForensic(img);
+        expect(r.combStrength).toBeLessThan(0.5);
     });
 });

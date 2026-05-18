@@ -43,6 +43,7 @@ export function analyzeHistogramForensic(imageData: ImageDataLike): HistogramFor
     const combStrength =
         (computeCombStrength(r) + computeCombStrength(g) + computeCombStrength(b)) / 3;
 
+    // holes/15: normalize hole count (~15 holes baseline); combStrength already 0-1; scale to 0-100
     const score = clamp(Math.round((holes / 15 + combStrength) * 50), 0, 100);
 
     return { score, r, g, b, holes, combStrength };
