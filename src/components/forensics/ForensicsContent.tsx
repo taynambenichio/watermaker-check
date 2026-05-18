@@ -3,6 +3,8 @@ import type { AppAction, AppState } from '../../types.ts';
 import { ModuleCard } from './ModuleCard.tsx';
 import { ExifModule } from './modules/ExifModule.tsx';
 import { GhostModule } from './modules/GhostModule.tsx';
+import { HistogramForensicModule } from './modules/HistogramForensicModule.tsx';
+import { DocStructureModule } from './modules/DocStructureModule.tsx';
 import { NoiseModule } from './modules/NoiseModule.tsx';
 import { QualityModule } from './modules/QualityModule.tsx';
 import { VerdictBlock } from './VerdictBlock.tsx';
@@ -73,6 +75,45 @@ export function ForensicsContent({ state, dispatch }: ForensicsContentProps) {
                             <span className="font-mono text-blue">{forensicResult.report.ela}</span>{' '}
                             — Use a aba ELA para visualização detalhada.
                         </p>
+                    </ModuleCard>
+
+                    <ModuleCard
+                        title="Detecção Copy-Move"
+                        score={forensicResult.report.copyMove}
+                        icon="🔁"
+                    >
+                        <p className="text-xs text-text-3">
+                            {forensicResult.copyMoveResult.matchCount} blocos correspondentes — Use
+                            a aba Copy-Move para visualização do mapa.
+                        </p>
+                    </ModuleCard>
+
+                    <ModuleCard
+                        title="Reamostramento"
+                        score={forensicResult.report.resampling}
+                        icon="📐"
+                    >
+                        <p className="text-xs text-text-3">
+                            {(forensicResult.resamplingResult.affectedRatio * 100).toFixed(1)}%
+                            linhas com periodicidade suspeita — Use a aba Resampling para
+                            visualização.
+                        </p>
+                    </ModuleCard>
+
+                    <ModuleCard
+                        title="Análise Histograma RGB"
+                        score={forensicResult.report.histogram}
+                        icon="📊"
+                    >
+                        <HistogramForensicModule result={forensicResult.histogramResult} />
+                    </ModuleCard>
+
+                    <ModuleCard
+                        title="Estrutura do Documento"
+                        score={forensicResult.report.docStructure}
+                        icon="🪪"
+                    >
+                        <DocStructureModule result={forensicResult.docStructureResult} />
                     </ModuleCard>
                 </div>
             )}
