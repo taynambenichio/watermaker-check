@@ -64,13 +64,15 @@ export function DocPane({
             const before = beforeImgRef.current;
             const img = imageRef.current;
             const divider = dividerRef.current;
+            const overlay = overlayCanvasRef.current;
             if (!before || !img || !divider) return;
             before.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
             img.style.clipPath = `inset(0 0 0 ${pct}%)`;
+            if (overlay) overlay.style.clipPath = `inset(0 0 0 ${pct}%)`;
             divider.style.left = `${pct}%`;
             setDividerPct(pct);
         },
-        [imageRef],
+        [imageRef, overlayCanvasRef],
     );
 
     // Sync before-image src and position when activated
@@ -87,9 +89,10 @@ export function DocPane({
         } else {
             before.style.display = 'none';
             img.style.clipPath = '';
+            if (overlayCanvasRef.current) overlayCanvasRef.current.style.clipPath = '';
             if (dividerRef.current) dividerRef.current.style.display = 'none';
         }
-    }, [beforeAfterActive, imageElement, imageRef, applyBeforeAfterClip]);
+    }, [beforeAfterActive, imageElement, imageRef, overlayCanvasRef, applyBeforeAfterClip]);
 
     // Before/After mouse drag
     const onDividerMouseDown = useCallback((e: ReactMouseEvent) => {
