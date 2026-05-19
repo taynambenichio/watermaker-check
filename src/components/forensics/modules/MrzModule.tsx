@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { parseMrz } from '../../../../js/forensics/mrz.js';
 import { validateMrzAuthenticity } from '../../../../js/forensics/mrz-authenticity.js';
 import { recognizeMrzFromImage } from '../../../../js/forensics/mrz-ocr.js';
@@ -40,12 +40,11 @@ export function MrzModule({ imageElement }: MrzModuleProps) {
           ? 'Autêntica ✓'
           : `Suspeita (${authenticity.suspicionScore}%)`;
 
-    useEffect(() => {
-        if (!imageElement || isReading) return;
+    const runOcr = useCallback((imageEl: HTMLImageElement) => {
         setIsReading(true);
         setOcrError(null);
         setOcrStatus('Extraindo MRZ...');
-        void recognizeMrzFromImage(imageElement, ({ status, progress }) => {
+        void recognizeMrzFromImage(imageEl, ({ status, progress }) => {
             setOcrStatus(`${status} ${Math.round(progress * 100)}%`);
         })
             .then(({ rawText }) => {
@@ -57,7 +56,12 @@ export function MrzModule({ imageElement }: MrzModuleProps) {
                 setOcrStatus(null);
             })
             .finally(() => setIsReading(false));
-    }, [imageElement]);
+    }, []);
+
+    useEffect(() => {
+        if (!imageElement) return;
+        runOcr(imageElement);
+    }, [imageElement, runOcr]);
 
     return (
         <div className="flex flex-col gap-3">
@@ -72,21 +76,7 @@ export function MrzModule({ imageElement }: MrzModuleProps) {
                 disabled={!imageElement || isReading}
                 onClick={() => {
                     if (!imageElement) return;
-                    setIsReading(true);
-                    setOcrError(null);
-                    setOcrStatus('Preparando OCR');
-                    void recognizeMrzFromImage(imageElement, ({ status, progress }) => {
-                        setOcrStatus(`${status} ${Math.round(progress * 100)}%`);
-                    })
-                        .then(({ rawText }) => {
-                            setText(rawText);
-                            setOcrStatus(null);
-                        })
-                        .catch((error: unknown) => {
-                            setOcrError(error instanceof Error ? error.message : String(error));
-                            setOcrStatus(null);
-                        })
-                        .finally(() => setIsReading(false));
+                    runOcr(imageElement);
                 }}
                 className="h-8 rounded-sm border border-border text-xs font-syne font-bold text-text-2 transition-colors hover:border-amber hover:text-amber disabled:cursor-not-allowed disabled:opacity-40"
             >
