@@ -92,31 +92,81 @@ function fixOcrBMisreadings(line: string): string {
     // Without inversion, '<' in the trailing fill zone is sometimes read as 'S'.
     // Only fix runs of 3+ to avoid corrupting real name characters.
     result = result.replace(/S{3,}$/, (m) => '<'.repeat(m.length));
+    // In the trailing fill zone, L is also a frequent misread of '<' (the vertical
+    // stroke of '<' is read as L). Only trigger when we have a strong '<<' anchor
+    // followed exclusively by K/C/L/< up to end of line — this guarantees we're
+    // in the padding region and not corrupting a real name suffix.
+    result = result.replace(/<<[KCL<]+$/, (m) => '<'.repeat(m.length));
     return result;
 }
 
 /**
- * Trim a candidate line to target length using sliding-window selection.
- * OCR may add garbage chars at EITHER start or end of an MRZ line (leading
- * stray digit, trailing 'SSSS' noise). For slightly-too-long lines, try
- * every possible window of `target` chars and pick the one with the best
- * MRZ-likeness score.
+ * Trim a candidate line to target length, handling three OCR distortion patterns:
+ *
+ *  1. Excess at start: '1I<LVAPA...<<<<<' (31 chars) — sliding window picks best
+ *  2. Excess in middle: 'RAMON<<<<STALMANS<<<' — internal '<{3,}' followed by a
+ *     letter/digit indicates OCR inserted extra '<'; collapse to the standard
+ *     '<<' separator.
+ *  3. Excess at end (name line only): trailing '<' filler — truncate.
+ *
+ * Name lines (no digits) are anchored at start to preserve the primary
+ * identifier. Data lines (with digits) use sliding-window selection.
  */
 function trimToLength(line: string, target: number): string {
-    if (line.length <= target) return line.padEnd(target, '<');
     if (line.length === target) return line;
-    // Try all sliding windows and pick highest-scoring one
-    let bestWindow = line.slice(0, target);
-    let bestScore = scoreMrzLikeness(bestWindow);
-    for (let start = 1; start <= line.length - target; start++) {
-        const win = line.slice(start, start + target);
-        const s = scoreMrzLikeness(win);
+    if (line.length < target) return line.padEnd(target, '<');
+
+    let l = line;
+    // Step 1: collapse internal '<{3,}' (excess separator) followed by [A-Z0-9]
+    while (l.length > target) {
+        const m = l.match(/<{3,}(?=[A-Z0-9])/);
+        if (!m || m.index === undefined) break;
+        l = l.slice(0, m.index) + '<<' + l.slice(m.index + m[0].length);
+    }
+    if (l.length <= target) return l.padEnd(target, '<');
+
+    // Step 2: name line (no digits) — anchor at start, truncate trailing '<'
+    if (!/[0-9]/.test(l)) {
+        while (l.length > target && l.endsWith('<')) l = l.slice(0, -1);
+        return l.slice(0, target).padEnd(target, '<');
+    }
+
+    // Step 3: data line — sliding window by candidate-window score
+    let best = l.slice(0, target);
+    let bestScore = scoreCandidateWindow(best);
+    for (let start = 1; start <= l.length - target; start++) {
+        const win = l.slice(start, start + target);
+        const s = scoreCandidateWindow(win);
         if (s > bestScore) {
             bestScore = s;
-            bestWindow = win;
+            best = win;
         }
     }
-    return bestWindow;
+    return best;
+}
+
+/**
+ * Window scoring for sliding-window trim. Prefers windows that:
+ *  - Have high MRZ-char density (digits + '<')
+ *  - Contain at least some letters (real MRZ has names/codes, not pure filler)
+ *  - End with a long '<' filler run (canonical MRZ trailing pattern)
+ * Pure-filler windows (all '<') are explicitly rejected.
+ */
+function scoreCandidateWindow(line: string): number {
+    if (/^<+$/.test(line)) return 0;
+    let digits = 0, lt = 0, letters = 0;
+    for (let i = 0; i < line.length; i++) {
+        const c = line.charCodeAt(i);
+        if (c >= 48 && c <= 57) digits++;
+        else if (c === 60) lt++;
+        else if (c >= 65 && c <= 90) letters++;
+    }
+    const base = (digits + lt) / line.length;
+    const fillerBonus = /<<+/.test(line) ? 0.1 : 0;
+    const letterBonus = letters > 0 ? 0.1 : 0;
+    const trailMatch = line.match(/<+$/);
+    const trailingBonus = (trailMatch ? trailMatch[0].length : 0) * 0.002;
+    return base + fillerBonus + letterBonus + trailingBonus;
 }
 
 /**
@@ -174,13 +224,18 @@ function scoreMrzLikeness(line: string): number {
 function extractMrzLines(rawText: string): string {
     const allLines = rawText.toUpperCase().split(/\r?\n/);
     const indexed = allLines.map((raw, idx) => {
-        const line = raw.replace(/[^A-Z0-9<]/g, '');
+        const stripped = raw.replace(/[^A-Z0-9<]/g, '');
+        // Apply OCR fixes BEFORE scoring/filtering so heavily garbled lines
+        // (like name-line with K/L/C misreads of '<') enter the candidate pool
+        // with correct length and score.
+        const line = fixOcrBMisreadings(stripped);
         return { line, idx, score: scoreMrzLikeness(line) };
     });
 
-    const MAX_GAP = 10;
-    // Minimum MRZ-likeness score. Card body text scores < 0.10; the lowest
-    // real MRZ line (names line) typically scores 0.35-0.50 due to '<' filler.
+    // PSM SPARSE_TEXT may insert HUNDREDS of garbage lines between real MRZ
+    // lines. Score+length filter does the heavy lifting; gap is just a sanity
+    // check that we're not joining lines from completely separate documents.
+    const MAX_GAP = 2000;
     const MIN_SCORE = 0.25;
 
     function searchTD1(minLen: number, maxLen: number, minScore: number): string | null {
@@ -202,7 +257,7 @@ function extractMrzLines(rawText: string): string {
             }
         }
         if (!best) return null;
-        const fix = (l: string) => trimToLength(fixOcrBMisreadings(l), 30);
+        const fix = (l: string) => trimToLength(l, 30);
         return `${fix(best.a.line)}\n${fix(best.b.line)}\n${fix(best.c.line)}`;
     }
 
@@ -222,17 +277,20 @@ function extractMrzLines(rawText: string): string {
             }
         }
         if (!best) return null;
-        const fix = (l: string) => trimToLength(fixOcrBMisreadings(l), 44);
+        const fix = (l: string) => trimToLength(l, 44);
         return `${fix(best.a.line)}\n${fix(best.b.line)}`;
     }
 
-    // Strict ranges & high score first; loosen progressively
+    // Strict ranges & high score first; loosen progressively.
+    // Upper bound generous on TD1 to admit lines like 'RAMON<<<<STALMANS<<...'
+    // (41 chars) where OCR inserted extra '<' between name parts — trimToLength
+    // collapses these to canonical 30.
     return (
         searchTD1(26, 34, MIN_SCORE) ??
         searchTD3(40, 48, MIN_SCORE) ??
-        searchTD1(22, 36, MIN_SCORE) ??   // loose TD1 (distorted scans)
-        searchTD3(36, 52, MIN_SCORE) ??   // loose TD3
-        searchTD1(22, 36, 0.15) ??         // last-resort low score (mostly-garbled OCR)
+        searchTD1(22, 45, MIN_SCORE) ??   // loose TD1 (distorted/expanded scans)
+        searchTD3(36, 55, MIN_SCORE) ??   // loose TD3
+        searchTD1(22, 45, 0.15) ??         // last-resort low score (mostly-garbled OCR)
         rawText
     );
 }
