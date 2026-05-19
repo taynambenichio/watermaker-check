@@ -2,6 +2,7 @@ import type { CopyMoveResult, ImageDataLike } from '../types.js';
 
 const BLOCK = 16;
 const MATCH_THRESHOLD = 8.0;
+const MIN_BLOCK_VARIANCE = 15;
 
 function clamp(v: number, min: number, max: number): number {
     return Math.max(min, Math.min(max, v));
@@ -23,19 +24,33 @@ function blockFeature(
     h: number,
     bx: number,
     by: number,
-): Float32Array {
+): Float32Array | null {
     const feat = new Float32Array(16);
+    let lumaSum = 0;
+    let lumaSumSq = 0;
     for (let sy = 0; sy < 4; sy++) {
         for (let sx = 0; sx < 4; sx++) {
             let sum = 0;
             for (let py = 0; py < 4; py++) {
                 for (let px = 0; px < 4; px++) {
-                    sum += getLuma(data, bx * BLOCK + sx * 4 + px, by * BLOCK + sy * 4 + py, w, h);
+                    const luma = getLuma(
+                        data,
+                        bx * BLOCK + sx * 4 + px,
+                        by * BLOCK + sy * 4 + py,
+                        w,
+                        h,
+                    );
+                    sum += luma;
+                    lumaSum += luma;
+                    lumaSumSq += luma * luma;
                 }
             }
             feat[sy * 4 + sx] = sum / 16;
         }
     }
+    const mean = lumaSum / (BLOCK * BLOCK);
+    const variance = lumaSumSq / (BLOCK * BLOCK) - mean * mean;
+    if (variance < MIN_BLOCK_VARIANCE) return null;
     return feat;
 }
 
@@ -59,8 +74,13 @@ export function analyzeCopyMove(imageData: ImageDataLike): CopyMoveResult {
     const features: { feat: Float32Array; bx: number; by: number }[] = [];
     for (let by = 0; by < gbh; by++) {
         for (let bx = 0; bx < gbw; bx++) {
-            features.push({ feat: blockFeature(data, w, h, bx, by), bx, by });
+            const feat = blockFeature(data, w, h, bx, by);
+            if (feat) features.push({ feat, bx, by });
         }
+    }
+
+    if (features.length < 2) {
+        return { score: 0, matchCount: 0, heatmapData: null };
     }
 
     // Sort by first component (lexicographic approximation) — O(n log n)

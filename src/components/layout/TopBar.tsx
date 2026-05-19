@@ -1,4 +1,5 @@
 import type { AppState } from '../../types.ts';
+import { scoreColor } from '../forensics/scoreColor.ts';
 
 interface TopBarProps {
     state: AppState;
@@ -13,11 +14,7 @@ export function TopBar({ state, onReanalyze }: TopBarProps) {
         : isAnalyzing
           ? '#e8a800'
           : forensicResult
-            ? forensicResult.report.totalScore < 30
-                ? '#5cb87a'
-                : forensicResult.report.totalScore <= 60
-                  ? '#e8a800'
-                  : '#d95f5f'
+            ? scoreColor(forensicResult.report.totalScore)
             : '#5a5750';
 
     const fileName = sourceFile?.name ?? null;

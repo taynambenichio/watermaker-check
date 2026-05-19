@@ -5,6 +5,7 @@ import { DocStructureModule } from './modules/DocStructureModule.tsx';
 import { ExifModule } from './modules/ExifModule.tsx';
 import { GhostModule } from './modules/GhostModule.tsx';
 import { HistogramForensicModule } from './modules/HistogramForensicModule.tsx';
+import { MrzModule } from './modules/MrzModule.tsx';
 import { NoiseModule } from './modules/NoiseModule.tsx';
 import { QualityModule } from './modules/QualityModule.tsx';
 import { VerdictBlock } from './VerdictBlock.tsx';
@@ -114,6 +115,10 @@ export function ForensicsContent({ state, dispatch }: ForensicsContentProps) {
                         icon="🪪"
                     >
                         <DocStructureModule result={forensicResult.docStructureResult} />
+                    </ModuleCard>
+
+                    <ModuleCard title="MRZ / OCR" icon="⌗" isQuality isAcceptable={false}>
+                        <MrzModule imageElement={imageElement} />
                     </ModuleCard>
                 </div>
             )}

@@ -1,5 +1,9 @@
 import type { ImageDataLike, ResamplingResult } from '../types.js';
 
+const AUTOCORR_THRESHOLD = 0.45;
+const MIN_PEAK_COUNT = 3;
+const MIN_GRADIENT_VARIANCE = 4;
+
 function clamp(v: number, min: number, max: number): number {
     return Math.max(min, Math.min(max, v));
 }
@@ -29,15 +33,29 @@ function autocorr(signal: Float32Array, lag: number): number {
     return norm === 0 ? 0 : Math.abs(sum / norm);
 }
 
+function variance(signal: Float32Array): number {
+    if (signal.length === 0) return 0;
+    let sum = 0;
+    let sumSq = 0;
+    for (const v of signal) {
+        sum += v;
+        sumSq += v * v;
+    }
+    const mean = sum / signal.length;
+    return sumSq / signal.length - mean * mean;
+}
+
 function hasPeriodicity(signal: Float32Array): boolean {
+    if (variance(signal) < MIN_GRADIENT_VARIANCE) return false;
+
     // Lag range 2-32: skips lag 1 (noise), caps at 32 (typical resampling factors)
-    // Threshold 0.15: empirically chosen; resampling artifacts show normalized autocorr > 0.15
+    // Threshold 0.45: avoids flagging normal camera gradients as interpolation artifacts.
     // Min 3 peaks: reduces false positives from single coincidental correlations
     let peakCount = 0;
     for (let lag = 2; lag <= 32; lag++) {
-        if (autocorr(signal, lag) > 0.15) peakCount++;
+        if (autocorr(signal, lag) > AUTOCORR_THRESHOLD) peakCount++;
     }
-    return peakCount >= 3;
+    return peakCount >= MIN_PEAK_COUNT;
 }
 
 export function analyzeResampling(imageData: ImageDataLike): ResamplingResult {

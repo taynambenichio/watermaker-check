@@ -27,17 +27,19 @@ export function ResamplingTab({ state }: ResamplingTabProps) {
                 indicam periodicidade suspeita no gradiente.
             </p>
             {score !== null && (
-                <div className="flex items-center gap-2">
-                    <span className="text-xs text-text-3">Score:</span>
-                    <span
-                        className="font-mono text-sm font-bold"
-                        style={{ color: scoreColor(score) }}
-                    >
-                        {score}
-                    </span>
-                    <span className="text-xs text-text-3">
-                        — {(result.affectedRatio * 100).toFixed(1)}% linhas afectadas
-                    </span>
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-text-3">Autenticidade:</span>
+                        <span
+                            className="font-mono text-sm font-bold"
+                            style={{ color: scoreColor(score) }}
+                        >
+                            {score}
+                        </span>
+                    </div>
+                    <p className="text-xs text-text-3">
+                        Risco bruto: {(result.affectedRatio * 100).toFixed(1)}% linhas afectadas
+                    </p>
                 </div>
             )}
             {result.heatmapData && <HeatmapCanvas heatmapData={result.heatmapData} />}

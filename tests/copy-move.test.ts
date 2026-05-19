@@ -71,6 +71,21 @@ describe('analyzeCopyMove', () => {
         expect(r.matchCount).toBe(0);
     });
 
+    it('does not flag uniform backgrounds as copy-move matches', () => {
+        const data = new Uint8ClampedArray(64 * 64 * 4);
+        for (let i = 0; i < data.length; i += 4) {
+            data[i] = 240;
+            data[i + 1] = 240;
+            data[i + 2] = 240;
+            data[i + 3] = 255;
+        }
+        const img: ImageDataLike = { data, width: 64, height: 64 };
+        const r = analyzeCopyMove(img);
+
+        expect(r.score).toBe(0);
+        expect(r.matchCount).toBe(0);
+    });
+
     it('pristine gradient image has low matchCount (few natural similarities)', () => {
         const img = makeGradientImage(64, 64);
         const r = analyzeCopyMove(img);

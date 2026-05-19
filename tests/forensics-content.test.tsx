@@ -227,5 +227,6 @@ describe('ForensicsContent', () => {
         expect(html).toContain('Reamostramento');
         expect(html).toContain('Análise Histograma RGB');
         expect(html).toContain('Estrutura do Documento');
+        expect(html).toContain('MRZ / OCR');
     });
 });
