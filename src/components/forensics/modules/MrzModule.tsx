@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { parseMrz } from '../../../../js/forensics/mrz.js';
 import { validateMrzAuthenticity } from '../../../../js/forensics/mrz-authenticity.js';
 import { recognizeMrzFromImage } from '../../../../js/forensics/mrz-ocr.js';
@@ -40,16 +40,32 @@ export function MrzModule({ imageElement }: MrzModuleProps) {
           ? 'Autêntica ✓'
           : `Suspeita (${authenticity.suspicionScore}%)`;
 
+    useEffect(() => {
+        if (!imageElement || isReading) return;
+        setIsReading(true);
+        setOcrError(null);
+        setOcrStatus('Extraindo MRZ...');
+        void recognizeMrzFromImage(imageElement, ({ status, progress }) => {
+            setOcrStatus(`${status} ${Math.round(progress * 100)}%`);
+        })
+            .then(({ rawText }) => {
+                setText(rawText);
+                setOcrStatus(null);
+            })
+            .catch((error: unknown) => {
+                setOcrError(error instanceof Error ? error.message : String(error));
+                setOcrStatus(null);
+            })
+            .finally(() => setIsReading(false));
+    }, [imageElement]);
+
     return (
         <div className="flex flex-col gap-3">
-            <textarea
-                value={text}
-                onChange={(event) => setText(event.target.value)}
-                spellCheck={false}
-                rows={3}
-                placeholder="Cole aqui as linhas MRZ"
-                className="min-h-20 w-full resize-y rounded-sm border border-border bg-bg px-2 py-2 font-mono text-xs text-text outline-none transition-colors placeholder:text-text-3 focus:border-amber"
-            />
+            {hasInput && (
+                <div className="rounded-sm border border-border bg-bg px-2 py-2 font-mono text-xs text-text break-words whitespace-pre-wrap">
+                    {text}
+                </div>
+            )}
 
             <button
                 type="button"
