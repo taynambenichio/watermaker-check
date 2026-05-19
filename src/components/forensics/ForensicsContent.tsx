@@ -23,11 +23,11 @@ export function ForensicsContent({ state, dispatch }: ForensicsContentProps) {
     const imageHeight = imageElement?.naturalHeight ?? 0;
 
     return (
-        <div className="flex h-full flex-col">
+        <div className="flex flex-col">
             <VerdictBlock report={report} isAnalyzing={isAnalyzing} progress={progress} />
 
             {forensicResult && (
-                <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-3">
+                <div className="flex flex-col gap-2 p-3">
                     <ModuleCard
                         title="Metadados EXIF"
                         score={forensicResult.report.exif}

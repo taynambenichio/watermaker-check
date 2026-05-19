@@ -54,7 +54,7 @@ describe('MRZ Authenticity Validation', () => {
 
     it('should detect inconsistent names', () => {
         const mrz = [
-            'P<UTO123456789<<1234567890<<<<<<<<<<<<<<<<<',
+            'P<UTO123456789<<1234567890<<<<<<<<<<<<<<<<<<',
             'L898902C36UTO7408122F1204159ZE184226B<<<<<10', // All numbers in name area
         ].join('\n');
         const parsed = parseMrz(mrz);
@@ -101,7 +101,7 @@ describe('MRZ Authenticity Validation', () => {
         const parsed = parseMrz(mrz);
         const auth = validateMrzAuthenticity(parsed);
 
-        expect(auth.recommendation).toContain('válido');
+        expect(auth.recommendation).toContain('autêntico');
     });
 
     it('should recommend suspicion for invalid MRZ', () => {
@@ -110,6 +110,6 @@ describe('MRZ Authenticity Validation', () => {
         const auth = validateMrzAuthenticity(parsed);
 
         expect(auth.authentic).toBe(false);
-        expect(auth.recommendation).toContain('anomalias');
+        expect(auth.recommendation).toContain('não detectada');
     });
 });

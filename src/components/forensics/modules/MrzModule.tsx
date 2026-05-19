@@ -33,12 +33,22 @@ export function MrzModule({ imageElement }: MrzModuleProps) {
     const result = useMemo(() => parseMrz(text), [text]);
     const authenticity = useMemo(() => validateMrzAuthenticity(result), [result]);
     const hasInput = text.trim().length > 0;
-    const statusColor = !hasInput ? COLOR_WARN : authenticity.authentic ? COLOR_OK : COLOR_BAD;
+    const mrzFound = result.documentType !== null;
+    // Three states: waiting | not-found (OCR ran, no MRZ) | found (show validation)
+    const statusColor = !hasInput
+        ? COLOR_WARN
+        : !mrzFound
+          ? COLOR_WARN
+          : authenticity.authentic
+            ? COLOR_OK
+            : COLOR_BAD;
     const statusText = !hasInput
         ? 'A aguardar MRZ'
-        : authenticity.authentic
-          ? 'Autêntica ✓'
-          : `Suspeita (${authenticity.suspicionScore}%)`;
+        : !mrzFound
+          ? 'Não detectada'
+          : authenticity.authentic
+            ? 'Autêntica ✓'
+            : `Suspeita (${authenticity.suspicionScore}%)`;
 
     const runOcr = useCallback((imageEl: HTMLImageElement) => {
         setIsReading(true);
@@ -66,9 +76,15 @@ export function MrzModule({ imageElement }: MrzModuleProps) {
     return (
         <div className="flex flex-col gap-3">
             {hasInput && (
-                <div className="rounded-sm border border-border bg-bg px-2 py-2 font-mono text-xs text-text break-words whitespace-pre-wrap">
-                    {text}
-                </div>
+                <details className="group">
+                    <summary className="cursor-pointer select-none font-syne text-xs font-bold uppercase tracking-wide text-text-3 hover:text-amber list-none flex items-center gap-1">
+                        <span className="transition-transform group-open:rotate-90">▶</span>
+                        Texto bruto OCR
+                    </summary>
+                    <div className="mt-1 max-h-24 overflow-y-auto rounded-sm border border-border bg-bg px-2 py-2 font-mono text-xs text-text break-words whitespace-pre-wrap">
+                        {text}
+                    </div>
+                </details>
             )}
 
             <button
@@ -99,7 +115,13 @@ export function MrzModule({ imageElement }: MrzModuleProps) {
                 </span>
             </div>
 
-            {hasInput && (
+            {hasInput && !mrzFound && (
+                <div className="rounded-sm border border-border bg-bg px-2 py-1.5 text-xs text-text-3 italic">
+                    {authenticity.recommendation}
+                </div>
+            )}
+
+            {hasInput && mrzFound && (
                 <>
                     <div className="rounded-sm border border-amber/40 bg-amber-dim px-2 py-1.5 text-xs text-amber">
                         {authenticity.recommendation}

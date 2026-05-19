@@ -124,55 +124,107 @@ function trimToLength(line: string, target: number): string {
  *  3. Find the first triplet/pair of candidates whose raw-index span is small
  *     (≤ MAX_GAP raw lines), meaning they're close together in the document
  */
+/**
+ * Score how likely a line is to be a real MRZ line.
+ * Real MRZ lines consist entirely of [A-Z0-9<]; they have many digits and/or
+ * many '<' fillers. Card body text (names, dates printed normally, descriptive
+ * labels) has almost no '<' and few digits.
+ *
+ * Returns 0..1 where:
+ *   - 0.00–0.10 = pure letters (card body text)
+ *   - 0.30+     = looks like an MRZ line
+ *   - 0.50+     = strong MRZ signal
+ */
+function scoreMrzLikeness(line: string): number {
+    if (!line.length) return 0;
+    let digits = 0;
+    let lt = 0;
+    for (let i = 0; i < line.length; i++) {
+        const c = line.charCodeAt(i);
+        if (c >= 48 && c <= 57) digits++;        // 0-9
+        else if (c === 60) lt++;                  // '<'
+    }
+    // Bonus for runs of '<<' which are a strong MRZ filler signal
+    const fillerBonus = /<<+/.test(line) ? 0.1 : 0;
+    return Math.min(1, (digits + lt) / line.length + fillerBonus);
+}
+
+/**
+ * Extract MRZ lines from raw OCR output using gap-tolerant scored search.
+ *
+ * Two-criteria selection:
+ *  1. Length range (e.g. 26-34 chars for TD1)
+ *  2. MRZ-likeness score above threshold (digit + '<' content)
+ *
+ * Without scoring, the algorithm may pick up card body text that happens to
+ * fall within the length range (e.g. printed names + dates). Scoring rejects
+ * letter-only lines from card body.
+ *
+ * Among valid candidates, picks the triplet/pair with the HIGHEST combined
+ * score whose raw-line indices span ≤ MAX_GAP — not the first by position.
+ */
 function extractMrzLines(rawText: string): string {
-    // Map every raw line to its cleaned version and original index
     const allLines = rawText.toUpperCase().split(/\r?\n/);
-    const indexed = allLines.map((raw, idx) => ({
-        line: raw.replace(/[^A-Z0-9<]/g, ''),
-        idx,
-    }));
+    const indexed = allLines.map((raw, idx) => {
+        const line = raw.replace(/[^A-Z0-9<]/g, '');
+        return { line, idx, score: scoreMrzLikeness(line) };
+    });
 
-    // Maximum number of raw lines allowed between consecutive MRZ candidates.
-    // This tolerates blank lines, single-char noise, stray OCR detections, etc.
     const MAX_GAP = 10;
+    // Minimum MRZ-likeness score. Card body text scores < 0.10; the lowest
+    // real MRZ line (names line) typically scores 0.35-0.50 due to '<' filler.
+    const MIN_SCORE = 0.25;
 
-    function searchTD1(minLen: number, maxLen: number): string | null {
-        const cands = indexed.filter(({ line }) => line.length >= minLen && line.length <= maxLen);
+    function searchTD1(minLen: number, maxLen: number, minScore: number): string | null {
+        const cands = indexed.filter(
+            ({ line, score }) =>
+                line.length >= minLen && line.length <= maxLen && score >= minScore,
+        );
+        let best: { a: typeof cands[0]; b: typeof cands[0]; c: typeof cands[0]; total: number } | null = null;
         for (let i = 0; i < cands.length - 2; i++) {
-            const a = cands[i];
-            const b = cands[i + 1];
-            const c = cands[i + 2];
-            if (b.idx - a.idx <= MAX_GAP && c.idx - b.idx <= MAX_GAP) {
-                // fixOcrBMisreadings first so trailing-noise fixes apply before padding
-                const fix = (l: string) =>
-                    trimToLength(fixOcrBMisreadings(l), 30);
-                return `${fix(a.line)}\n${fix(b.line)}\n${fix(c.line)}`;
+            for (let j = i + 1; j < cands.length - 1; j++) {
+                if (cands[j].idx - cands[i].idx > MAX_GAP) break;
+                for (let k = j + 1; k < cands.length; k++) {
+                    if (cands[k].idx - cands[j].idx > MAX_GAP) break;
+                    const total = cands[i].score + cands[j].score + cands[k].score;
+                    if (!best || total > best.total) {
+                        best = { a: cands[i], b: cands[j], c: cands[k], total };
+                    }
+                }
             }
         }
-        return null;
+        if (!best) return null;
+        const fix = (l: string) => trimToLength(fixOcrBMisreadings(l), 30);
+        return `${fix(best.a.line)}\n${fix(best.b.line)}\n${fix(best.c.line)}`;
     }
 
-    function searchTD3(minLen: number, maxLen: number): string | null {
-        const cands = indexed.filter(({ line }) => line.length >= minLen && line.length <= maxLen);
+    function searchTD3(minLen: number, maxLen: number, minScore: number): string | null {
+        const cands = indexed.filter(
+            ({ line, score }) =>
+                line.length >= minLen && line.length <= maxLen && score >= minScore,
+        );
+        let best: { a: typeof cands[0]; b: typeof cands[0]; total: number } | null = null;
         for (let i = 0; i < cands.length - 1; i++) {
-            const a = cands[i];
-            const b = cands[i + 1];
-            if (b.idx - a.idx <= MAX_GAP) {
-                // fixOcrBMisreadings first so trailing-noise fixes apply before padding
-                const fix = (l: string) =>
-                    trimToLength(fixOcrBMisreadings(l), 44);
-                return `${fix(a.line)}\n${fix(b.line)}`;
+            for (let j = i + 1; j < cands.length; j++) {
+                if (cands[j].idx - cands[i].idx > MAX_GAP) break;
+                const total = cands[i].score + cands[j].score;
+                if (!best || total > best.total) {
+                    best = { a: cands[i], b: cands[j], total };
+                }
             }
         }
-        return null;
+        if (!best) return null;
+        const fix = (l: string) => trimToLength(fixOcrBMisreadings(l), 44);
+        return `${fix(best.a.line)}\n${fix(best.b.line)}`;
     }
 
-    // Try strict ranges first, then progressively looser
+    // Strict ranges & high score first; loosen progressively
     return (
-        searchTD1(26, 34) ??
-        searchTD3(40, 48) ??
-        searchTD1(22, 36) ??  // loose TD1 (distorted scans)
-        searchTD3(36, 52) ??  // loose TD3
+        searchTD1(26, 34, MIN_SCORE) ??
+        searchTD3(40, 48, MIN_SCORE) ??
+        searchTD1(22, 36, MIN_SCORE) ??   // loose TD1 (distorted scans)
+        searchTD3(36, 52, MIN_SCORE) ??   // loose TD3
+        searchTD1(22, 36, 0.15) ??         // last-resort low score (mostly-garbled OCR)
         rawText
     );
 }

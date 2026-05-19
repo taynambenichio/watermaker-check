@@ -125,11 +125,11 @@ body,
     background: #131311;
 }
 ::-webkit-scrollbar-thumb {
-    background: #2a2a26;
+    background: #4a4a44;
     border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #3a3a36;
+    background: #6a6a62;
 }
 
 /* Focus ring */

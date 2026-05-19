@@ -9,6 +9,8 @@ export interface MrzAuthenticityCheck {
 
 export interface MrzAuthenticityResult {
     authentic: boolean;
+    /** True when OCR ran but no valid MRZ structure was found */
+    notFound: boolean;
     suspicionScore: number; // 0–100, 100 = highly suspicious
     checks: MrzAuthenticityCheck[];
     recommendation: string;
@@ -428,6 +430,20 @@ function validateDocumentNumber(mrz: MrzResult): MrzAuthenticityCheck {
 }
 
 export function validateMrzAuthenticity(mrz: MrzResult): MrzAuthenticityResult {
+    // If MRZ could not be detected or parsed, return neutral result (score 50)
+    if (mrz.documentType === null) {
+        const notFound = mrz.errors.some((e) => e.includes('vazia') || e.includes('inválidos') || e.includes('não suportado'));
+        return {
+            authentic: false,
+            notFound: true,
+            suspicionScore: 50, // Neutral — absence of MRZ is not evidence of tampering
+            checks: [],
+            recommendation: notFound
+                ? 'MRZ não detectada — documento pode não ter zona MRZ, ou a leitura OCR falhou.'
+                : 'MRZ incompleta — formato não reconhecido.',
+        };
+    }
+
     const checks: MrzAuthenticityCheck[] = [
         hasConsistentFormat(mrz),
         hasValidCheckdigits(mrz),
@@ -444,13 +460,11 @@ export function validateMrzAuthenticity(mrz: MrzResult): MrzAuthenticityResult {
     const warningCount = checks.filter((c) => c.severity === 'warning' && !c.passed).length;
     const suspicionScore = Math.min(100, errorCount * 25 + warningCount * 10);
 
-    // Document is authentic if:
-    // 1. No errors detected
-    // 2. All critical checksums valid
+    // Document is authentic if no errors and all checksums valid
     const authentic = errorCount === 0 && mrz.valid;
 
     // Generate recommendation
-    let recommendation = 'Documento válido.';
+    let recommendation = 'MRZ válida — documento aparenta ser autêntico.';
     if (suspicionScore > 75) {
         recommendation = 'MRZ MUITO SUSPEITA — provável falsificação ou edição.';
     } else if (suspicionScore > 50) {
@@ -463,6 +477,7 @@ export function validateMrzAuthenticity(mrz: MrzResult): MrzAuthenticityResult {
 
     return {
         authentic,
+        notFound: false,
         suspicionScore,
         checks,
         recommendation,
