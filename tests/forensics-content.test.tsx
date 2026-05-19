@@ -111,6 +111,7 @@ describe('ForensicsContent', () => {
                             docStructure: 50,
                             completedAt: Date.now(),
                         },
+                        mrzResult: null,
                     },
                 }}
                 dispatch={() => {}}
@@ -209,6 +210,7 @@ describe('ForensicsContent', () => {
                             docStructure: 50,
                             completedAt: Date.now(),
                         },
+                        mrzResult: null,
                     },
                 }}
                 dispatch={() => {}}

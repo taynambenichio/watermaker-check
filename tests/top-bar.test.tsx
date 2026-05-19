@@ -72,6 +72,7 @@ function stateWithScore(totalScore: number): AppState {
                 regionConsistency: 0,
                 photoZoneIntegrity: 0,
             },
+            mrzResult: null,
         },
     };
 }

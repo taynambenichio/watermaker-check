@@ -124,5 +124,6 @@ export async function runForensicPipeline(
         resamplingResult,
         histogramResult,
         docStructureResult,
+        mrzResult: null,
     };
 }

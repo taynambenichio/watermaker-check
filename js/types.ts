@@ -1,3 +1,5 @@
+import type { MrzResult } from './forensics/mrz.js';
+
 // ── Existing ──────────────────────────────────────────────────────────────
 export interface AppState {
     image: HTMLImageElement | null;
@@ -156,4 +158,5 @@ export interface ForensicPipelineResult {
     resamplingResult: ResamplingResult;
     histogramResult: HistogramForensicResult;
     docStructureResult: DocStructureResult;
+    mrzResult: MrzResult | null;
 }
