@@ -12,6 +12,7 @@ const STEPS: PipelineStep[] = [
     'resampling',
     'histogram',
     'doc-structure',
+    'mrz',
     'report',
 ];
 
@@ -25,6 +26,7 @@ const STEP_LABELS: Record<PipelineStep, string> = {
     resampling: 'Reamostramento',
     histogram: 'Histograma RGB',
     'doc-structure': 'Estrutura Documento',
+    mrz: 'MRZ/OCR',
     report: 'Relatório',
 };
 
@@ -36,7 +38,8 @@ const WEIGHTS = [
     { key: 'noise' as const, label: 'Ruído', weight: '×0.15' },
     { key: 'exif' as const, label: 'EXIF', weight: '×0.10' },
     { key: 'histogram' as const, label: 'Histograma', weight: '×0.05' },
-    { key: 'docStructure' as const, label: 'Doc. Struct', weight: '×0.05' },
+    { key: 'docStructure' as const, label: 'Doc. Struct', weight: '×0.025' },
+    { key: 'mrz' as const, label: 'MRZ', weight: '×0.025' },
 ];
 
 interface VerdictBlockProps {
