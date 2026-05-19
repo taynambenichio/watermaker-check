@@ -295,7 +295,7 @@ function isValidSex(sex: string | null): boolean {
 function hasConsistentFormat(mrz: MrzResult): MrzAuthenticityCheck {
     const docType = mrz.documentType;
     const lines = mrz.normalizedLines;
-    const isValid = docType && lines.length > 0;
+    const isValid = !!(docType && lines.length > 0);
 
     return {
         name: 'Formato consistente',
@@ -318,7 +318,7 @@ function hasValidCheckdigits(mrz: MrzResult): MrzAuthenticityCheck {
 
 function hasValidIssuer(mrz: MrzResult): MrzAuthenticityCheck {
     const issuer = mrz.fields.issuingState;
-    const isValid = issuer && VALID_ISSUING_STATES.has(issuer);
+    const isValid = !!(issuer && VALID_ISSUING_STATES.has(issuer));
 
     return {
         name: 'Emissor válido',
@@ -366,7 +366,7 @@ function hasConsistentNames(mrz: MrzResult): MrzAuthenticityCheck {
         (!surname || /^[A-Za-z\s-]+$/.test(surname)) &&
         (!givenNames || givenNames.every((name) => /^[A-Za-z\s-]+$/.test(name)));
 
-    const isValid = hasNames && isAlphabetic;
+    const isValid = !!(hasNames && isAlphabetic);
 
     return {
         name: 'Nomes consistentes',
@@ -417,7 +417,7 @@ function detectEditionPatterns(mrz: MrzResult): MrzAuthenticityCheck {
 
 function validateDocumentNumber(mrz: MrzResult): MrzAuthenticityCheck {
     const docNum = mrz.fields.documentNumber;
-    const isValid = docNum && /^[A-Z0-9]{1,20}$/.test(docNum);
+    const isValid = !!(docNum && /^[A-Z0-9]{1,20}$/.test(docNum));
 
     return {
         name: 'Número do documento',

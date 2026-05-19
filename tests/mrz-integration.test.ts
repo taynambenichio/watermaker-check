@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { buildReport } from '../js/forensics/report.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseMrz } from '../js/forensics/mrz.js';
-import type { ForensicReport } from '../js/types.js';
+import { buildReport } from '../js/forensics/report.js';
 
 // Mock document.createElement for Canvas
 function setupMocks() {
@@ -36,7 +35,7 @@ function setupMocks() {
             if (tagName === 'canvas') return mockCanvas;
             return {};
         }),
-    } as any;
+    } as unknown as Document;
 
     global.Image = class MockImage {
         naturalWidth = 100;
@@ -47,7 +46,7 @@ function setupMocks() {
         constructor() {
             setTimeout(() => this.onload?.(), 0);
         }
-    } as any;
+    } as unknown as typeof Image;
 }
 
 describe('MRZ Integration', () => {

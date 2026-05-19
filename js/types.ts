@@ -1,6 +1,8 @@
 import type { MrzResult } from './forensics/mrz.js';
 
 // ── Existing ──────────────────────────────────────────────────────────────
+// Re-export MrzResult so other modules can import it from types.js
+export type { MrzResult };
 export interface AppState {
     image: HTMLImageElement | null;
     sourceFile: File | null;

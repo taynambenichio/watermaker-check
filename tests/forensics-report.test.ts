@@ -12,7 +12,17 @@ function report(
     histogram = 0,
     docStructure = 0,
 ) {
-    return buildReport(ela, exif, noise, ghost, copyMove, resampling, histogram, docStructure, null);
+    return buildReport(
+        ela,
+        exif,
+        noise,
+        ghost,
+        copyMove,
+        resampling,
+        histogram,
+        docStructure,
+        null,
+    );
 }
 
 describe('buildReport', () => {

@@ -54,6 +54,7 @@ function stateWithScore(totalScore: number): AppState {
                 resampling: totalScore,
                 histogram: totalScore,
                 docStructure: totalScore,
+                mrz: totalScore,
                 completedAt: 0,
             },
             copyMoveResult: { score: 0, matchCount: 0, heatmapData: null },

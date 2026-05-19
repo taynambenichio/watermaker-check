@@ -5,12 +5,12 @@ import { analyzeDocStructure } from './doc-structure.js';
 import { analyzeExif } from './exif.js';
 import { analyzeGhost } from './ghost.js';
 import { analyzeHistogramForensic } from './histogram-forensic.js';
+import { parseMrz } from './mrz.js';
+import { recognizeMrzFromImage } from './mrz-ocr.js';
 import { analyzeNoise } from './noise.js';
 import { analyzeQuality } from './quality.js';
 import { buildReport } from './report.js';
 import { analyzeResampling } from './resampling.js';
-import { recognizeMrzFromImage } from './mrz-ocr.js';
-import { parseMrz } from './mrz.js';
 
 function isHeicFile(file: File): boolean {
     return (
