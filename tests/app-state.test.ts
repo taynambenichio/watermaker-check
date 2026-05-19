@@ -67,6 +67,7 @@ describe('appReducer', () => {
                 docStructureResult: {
                     score: 50,
                     mrzDetected: false,
+                    mrzResult: null,
                     regionConsistency: 0,
                     photoZoneIntegrity: 0,
                 },
