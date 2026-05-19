@@ -9,6 +9,8 @@ import { analyzeNoise } from './noise.js';
 import { analyzeQuality } from './quality.js';
 import { buildReport } from './report.js';
 import { analyzeResampling } from './resampling.js';
+import { recognizeMrzFromImage } from './mrz-ocr.js';
+import { parseMrz } from './mrz.js';
 
 function isHeicFile(file: File): boolean {
     return (
@@ -99,6 +101,18 @@ export async function runForensicPipeline(
             }),
         ]);
 
+    // Phase 3 (continued): MRZ OCR + parsing
+    let mrzResult = null;
+    if (img) {
+        try {
+            const ocrResult = await recognizeMrzFromImage(img);
+            mrzResult = ocrResult.parsed;
+        } catch (error) {
+            console.warn('[Pipeline] MRZ OCR failed:', error);
+            mrzResult = parseMrz(''); // Returns invalid result
+        }
+    }
+
     // Build report
     onProgress?.('report', 'running');
     const report = buildReport(
@@ -110,6 +124,7 @@ export async function runForensicPipeline(
         resamplingResult.score,
         histogramResult.score,
         docStructureResult.score,
+        mrzResult,
     );
     onProgress?.('report', 'done');
 
@@ -124,6 +139,6 @@ export async function runForensicPipeline(
         resamplingResult,
         histogramResult,
         docStructureResult,
-        mrzResult: null,
+        mrzResult,
     };
 }

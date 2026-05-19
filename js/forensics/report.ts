@@ -1,4 +1,4 @@
-import type { ForensicReport, Verdict } from '../types.js';
+import type { ForensicReport, MrzResult, Verdict } from '../types.js';
 
 export function buildReport(
     elaScore: number,
@@ -9,6 +9,7 @@ export function buildReport(
     resamplingScore: number,
     histogramScore: number,
     docStructureScore: number,
+    mrzResult: MrzResult | null,
 ): ForensicReport {
     const suspicionScore = Math.round(
         copyMoveScore * 0.2 +
