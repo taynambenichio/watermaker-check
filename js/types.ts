@@ -35,7 +35,8 @@ export type PipelineStep =
     | 'copy-move'
     | 'resampling'
     | 'histogram'
-    | 'doc-structure';
+    | 'doc-structure'
+    | 'mrz';
 
 export type PipelineProgressCallback = (
     step: PipelineStep,
@@ -143,6 +144,7 @@ export interface ForensicReport {
     resampling: number;
     histogram: number;
     docStructure: number;
+    mrz: number;
     completedAt: number;
 }
 
