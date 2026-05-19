@@ -334,10 +334,68 @@ export async function recognizeMrzFromImage(
     // diagnose what Tesseract.js actually produced (visible in "Texto Bruto OCR")
     if (!extracted) {
         mrzText = `--- PSM SPARSE_TEXT ---\n${textSparse}\n--- PSM SINGLE_BLOCK ---\n${textBlock}`;
+    } else {
+        mrzText = normalizeMrzDigitPositions(mrzText);
     }
 
     onProgress?.({ status: 'done', progress: 1 });
     return { rawText: mrzText, parsed: parseMrz(mrzText) };
+}
+
+/**
+ * Map common OCR letter-as-digit confusions in MRZ positions that ICAO defines
+ * as numeric. In the green CRT-style display font, characters like 'O', 'D',
+ * 'I', 'S' visually resemble digits, so an OCR slip is invisible to the user
+ * but causes checksum failures (e.g. expected="0", actual="O" both render
+ * identically yet compare unequal).
+ *
+ * Conservative: only touches positions where ICAO format guarantees a digit
+ * (check digits, birth date, expiry date). Document number / optional zone
+ * are alphanumeric and left untouched. Names are letters-only and untouched.
+ */
+const LETTER_TO_DIGIT: Record<string, string> = {
+    O: '0', D: '0', Q: '0',
+    I: '1', L: '1',
+    Z: '2',
+    A: '4',
+    S: '5',
+    G: '6',
+    T: '7',
+    B: '8',
+};
+
+function fixDigitsIn(line: string, ranges: ReadonlyArray<readonly [number, number]>): string {
+    const chars = line.split('');
+    for (const [start, end] of ranges) {
+        for (let i = start; i < end && i < chars.length; i++) {
+            const mapped = LETTER_TO_DIGIT[chars[i]];
+            if (mapped) chars[i] = mapped;
+        }
+    }
+    return chars.join('');
+}
+
+function normalizeMrzDigitPositions(mrzText: string): string {
+    const lines = mrzText.split('\n');
+
+    // TD1: 3 lines × 30 chars
+    if (lines.length === 3 && lines.every((l) => l.length === 30)) {
+        // Line 1: doc-number check digit at pos 14
+        const l1 = fixDigitsIn(lines[0], [[14, 15]]);
+        // Line 2: birth (0-5) + check (6), expiry (8-13) + check (14), composite check (29)
+        const l2 = fixDigitsIn(lines[1], [[0, 7], [8, 15], [29, 30]]);
+        return `${l1}\n${l2}\n${lines[2]}`;
+    }
+
+    // TD3: 2 lines × 44 chars
+    if (lines.length === 2 && lines.every((l) => l.length === 44)) {
+        // Line 2: doc# check (9), birth (13-18) + check (19), expiry (21-26) + check (27),
+        // optional check (42), composite check (43)
+        const l2 = fixDigitsIn(lines[1], [[9, 10], [13, 20], [21, 28], [42, 44]]);
+        return `${lines[0]}\n${l2}`;
+    }
+
+    return mrzText;
 }
 
 /** Call this to release the cached worker (e.g. on app teardown) */
