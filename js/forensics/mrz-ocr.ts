@@ -96,19 +96,27 @@ function fixOcrBMisreadings(line: string): string {
 }
 
 /**
- * Trim a candidate line to target length by removing obvious OCR trailing noise.
- * When a line is slightly longer than expected, trailing non-MRZ patterns often
- * appear after the real filler zone (e.g. 'ssss¢', 'eess', etc.).
+ * Trim a candidate line to target length using sliding-window selection.
+ * OCR may add garbage chars at EITHER start or end of an MRZ line (leading
+ * stray digit, trailing 'SSSS' noise). For slightly-too-long lines, try
+ * every possible window of `target` chars and pick the one with the best
+ * MRZ-likeness score.
  */
 function trimToLength(line: string, target: number): string {
     if (line.length <= target) return line.padEnd(target, '<');
-    // If only 1-4 chars too long, check if the extra chars look like noise
-    if (line.length <= target + 4) {
-        const extra = line.slice(target);
-        // Keep if extra chars are valid MRZ filler or uppercase
-        if (/^[<A-Z0-9]+$/.test(extra)) return line.slice(0, target);
+    if (line.length === target) return line;
+    // Try all sliding windows and pick highest-scoring one
+    let bestWindow = line.slice(0, target);
+    let bestScore = scoreMrzLikeness(bestWindow);
+    for (let start = 1; start <= line.length - target; start++) {
+        const win = line.slice(start, start + target);
+        const s = scoreMrzLikeness(win);
+        if (s > bestScore) {
+            bestScore = s;
+            bestWindow = win;
+        }
     }
-    return line.slice(0, target);
+    return bestWindow;
 }
 
 /**
@@ -245,18 +253,29 @@ export async function recognizeMrzFromImage(
     });
 
     const {
-        data: { text },
+        data: { text: textSparse },
     } = await worker.recognize(canvas);
 
-    let mrzText = extractMrzLines(text);
+    let mrzText = extractMrzLines(textSparse);
+    let extracted = mrzText !== textSparse;
+    let textBlock = '';
 
-    // If first pass found nothing (fell back to raw text), try SINGLE_BLOCK mode
-    // which sometimes picks up the MRZ zone more reliably
-    if (mrzText === text) {
+    // If first pass found nothing, try SINGLE_BLOCK mode and combine outputs
+    if (!extracted) {
         await worker.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_BLOCK });
-        const { data: { text: text2 } } = await worker.recognize(canvas);
-        const mrzText2 = extractMrzLines(text2);
-        if (mrzText2 !== text2) mrzText = mrzText2;
+        const { data: { text: t2 } } = await worker.recognize(canvas);
+        textBlock = t2;
+        const mrzText2 = extractMrzLines(t2);
+        if (mrzText2 !== t2) {
+            mrzText = mrzText2;
+            extracted = true;
+        }
+    }
+
+    // When extraction fails, expose BOTH raw OCR outputs so the user can
+    // diagnose what Tesseract.js actually produced (visible in "Texto Bruto OCR")
+    if (!extracted) {
+        mrzText = `--- PSM SPARSE_TEXT ---\n${textSparse}\n--- PSM SINGLE_BLOCK ---\n${textBlock}`;
     }
 
     onProgress?.({ status: 'done', progress: 1 });
