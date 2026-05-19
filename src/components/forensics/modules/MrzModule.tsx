@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { parseMrz } from '../../../../js/forensics/mrz.js';
+import { validateMrzAuthenticity } from '../../../../js/forensics/mrz-authenticity.js';
 import { recognizeMrzFromImage } from '../../../../js/forensics/mrz-ocr.js';
 import { COLOR_BAD, COLOR_OK, COLOR_WARN } from '../scoreColor.ts';
 
@@ -30,13 +31,14 @@ export function MrzModule({ imageElement }: MrzModuleProps) {
     const [ocrStatus, setOcrStatus] = useState<string | null>(null);
     const [ocrError, setOcrError] = useState<string | null>(null);
     const result = useMemo(() => parseMrz(text), [text]);
+    const authenticity = useMemo(() => validateMrzAuthenticity(result), [result]);
     const hasInput = text.trim().length > 0;
-    const statusColor = !hasInput ? COLOR_WARN : result.valid ? COLOR_OK : COLOR_BAD;
+    const statusColor = !hasInput ? COLOR_WARN : authenticity.authentic ? COLOR_OK : COLOR_BAD;
     const statusText = !hasInput
         ? 'A aguardar MRZ'
-        : result.valid
-          ? 'Checksums válidos'
-          : 'MRZ inválida';
+        : authenticity.authentic
+          ? 'Autêntica ✓'
+          : `Suspeita (${authenticity.suspicionScore}%)`;
 
     return (
         <div className="flex flex-col gap-3">
@@ -93,6 +95,10 @@ export function MrzModule({ imageElement }: MrzModuleProps) {
 
             {hasInput && (
                 <>
+                    <div className="rounded-sm border border-amber/40 bg-amber-dim px-2 py-1.5 text-xs text-amber">
+                        {authenticity.recommendation}
+                    </div>
+
                     {result.errors.length > 0 && (
                         <div className="rounded-sm border border-red/40 bg-red-dim px-2 py-1.5 text-xs text-red">
                             {result.errors.join(' · ')}
@@ -111,22 +117,51 @@ export function MrzModule({ imageElement }: MrzModuleProps) {
                     </div>
                     <Field label="Nomes" value={result.fields.givenNames} />
 
-                    {result.checks.length > 0 && (
+                    {authenticity.checks.length > 0 && (
                         <div className="flex flex-col gap-1">
-                            {result.checks.map((check) => (
+                            {authenticity.checks.map((check) => (
                                 <div
-                                    key={check.label}
-                                    className="flex items-center justify-between rounded-sm bg-bg px-2 py-1 text-xs"
+                                    key={check.name}
+                                    className="flex items-start justify-between rounded-sm bg-bg px-2 py-1 text-xs gap-2"
                                 >
-                                    <span className="text-text-3">{check.label}</span>
+                                    <div className="flex-1">
+                                        <div className="font-bold text-text-2">{check.name}</div>
+                                        <div className="text-text-3 text-xs">
+                                            {check.description}
+                                        </div>
+                                    </div>
                                     <span
-                                        className="font-mono font-bold"
-                                        style={{ color: check.valid ? COLOR_OK : COLOR_BAD }}
+                                        className="font-mono font-bold whitespace-nowrap"
+                                        style={{
+                                            color: check.passed ? COLOR_OK : COLOR_BAD,
+                                        }}
                                     >
-                                        {check.actual}/{check.expected}
+                                        {check.passed ? '✓' : '✗'}
                                     </span>
                                 </div>
                             ))}
+                        </div>
+                    )}
+
+                    {result.checks.length > 0 && (
+                        <div className="border-t border-border-soft pt-2">
+                            <div className="text-xs font-bold text-text-3 mb-1">Checksums</div>
+                            <div className="flex flex-col gap-1">
+                                {result.checks.map((check) => (
+                                    <div
+                                        key={check.label}
+                                        className="flex items-center justify-between rounded-sm bg-bg px-2 py-1 text-xs"
+                                    >
+                                        <span className="text-text-3">{check.label}</span>
+                                        <span
+                                            className="font-mono font-bold"
+                                            style={{ color: check.valid ? COLOR_OK : COLOR_BAD }}
+                                        >
+                                            {check.actual}/{check.expected}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </>
