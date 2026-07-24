@@ -137,7 +137,12 @@ export interface DocStructureResult {
 
 export interface ForensicReport {
     totalScore: number;
+    suspicionScore?: number;
+    confidence?: number;
+    evidenceLevel?: 'low' | 'moderate' | 'high';
     verdict: Verdict;
+    summary?: string;
+    signals?: ForensicSignal[];
     ela: number;
     exif: number;
     noise: number;
@@ -148,6 +153,24 @@ export interface ForensicReport {
     docStructure: number;
     mrz: number;
     completedAt: number;
+}
+
+export interface ForensicSignal {
+    key:
+        | 'copyMove'
+        | 'ghost'
+        | 'ela'
+        | 'resampling'
+        | 'noise'
+        | 'exif'
+        | 'histogram'
+        | 'docStructure'
+        | 'mrz';
+    label: string;
+    score: number;
+    weight: number;
+    contribution: number;
+    detail: string;
 }
 
 // ── Pipeline result ───────────────────────────────────────────────────────

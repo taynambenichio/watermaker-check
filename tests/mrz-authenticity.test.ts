@@ -111,5 +111,18 @@ describe('MRZ Authenticity Validation', () => {
 
         expect(auth.authentic).toBe(false);
         expect(auth.recommendation).toContain('não detectada');
+        expect(auth.recommendation).toContain('leitura inconclusiva');
+        expect(auth.notFound).toBe(true);
+        expect(auth.suspicionScore).toBe(50);
+    });
+
+    it('should keep missing MRZ neutral instead of suspicious', () => {
+        const parsed = parseMrz('<<<');
+        const auth = validateMrzAuthenticity(parsed);
+
+        expect(auth.notFound).toBe(true);
+        expect(auth.authentic).toBe(false);
+        expect(auth.suspicionScore).toBe(50);
+        expect(auth.recommendation).toContain('não indica falsificação');
     });
 });

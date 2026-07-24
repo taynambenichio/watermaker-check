@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { appReducer, initialAppState } from '../src/types.ts';
 
 describe('appReducer', () => {
@@ -90,5 +90,27 @@ describe('appReducer', () => {
         expect(next.isAnalyzing).toBe(false);
         expect(next.progress).toEqual({});
         expect(next.ghostLevelIndex).toBe(0);
+    });
+
+    it('does not revoke object URLs inside the reducer', () => {
+        const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+        const next = appReducer(
+            {
+                ...initialAppState,
+                objectUrl: 'blob:old-image',
+            },
+            {
+                type: 'IMAGE_LOADED',
+                imageElement: {} as HTMLImageElement,
+                sourceFile: new File(['x'], 'sample.png', { type: 'image/png' }),
+                objectUrl: 'blob:new-image',
+            },
+        );
+
+        expect(revokeSpy).not.toHaveBeenCalled();
+        expect(next.objectUrl).toBe('blob:new-image');
+
+        revokeSpy.mockRestore();
     });
 });

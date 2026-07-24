@@ -55,6 +55,22 @@ describe('parseMrz', () => {
         expect(result.fields.givenNames).toEqual(['ANNA', 'MARIA']);
     });
 
+    it('parses and validates a TD2 identity-card MRZ', () => {
+        const result = parseMrz(
+            ['I<UTODOE<<JANE<<<<<<<<<<<<<<<<<<<<<<', 'HA672242<6YTO5802254M9601086<<<<<<<8'].join(
+                '\n',
+            ),
+        );
+
+        expect(result.valid).toBe(true);
+        expect(result.documentType).toBe('TD2');
+        expect(result.fields.documentNumber).toBe('HA672242');
+        expect(result.fields.issuingState).toBe('UTO');
+        expect(result.fields.nationality).toBe('YTO');
+        expect(result.fields.birthDate).toBe('580225');
+        expect(result.fields.expiryDate).toBe('960108');
+    });
+
     it('rebuilds TD1 MRZ from OCR text split into extra fragments', () => {
         const result = parseMrz(
             [

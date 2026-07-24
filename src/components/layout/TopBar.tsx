@@ -7,10 +7,12 @@ interface TopBarProps {
 }
 
 export function TopBar({ state, onReanalyze }: TopBarProps) {
-    const { imageElement, sourceFile, forensicResult, isAnalyzing } = state;
+    const { imageElement, sourceFile, forensicResult, isAnalyzing, loadError } = state;
 
     const statusColor = !imageElement
-        ? '#5a5750'
+        ? loadError
+            ? '#d95f5f'
+            : '#5a5750'
         : isAnalyzing
           ? '#e8a800'
           : forensicResult
@@ -41,7 +43,9 @@ export function TopBar({ state, onReanalyze }: TopBarProps) {
                     isAnalyzing
                         ? 'A analisar…'
                         : !imageElement
-                          ? 'Sem imagem'
+                          ? loadError
+                              ? 'Erro ao carregar imagem'
+                              : 'Sem imagem'
                           : !forensicResult
                             ? 'Erro de análise'
                             : 'Pronto'

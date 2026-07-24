@@ -56,6 +56,12 @@ describe('buildReport', () => {
         expect(r.totalScore).toBeCloseTo(50, 0);
     });
 
+    it('does not mark borderline high scores as authentic', () => {
+        const r = report(0, 0, 0, 0, 80, 0, 0, 0);
+        expect(r.totalScore).toBe(83);
+        expect(r.verdict).toBe('suspicious');
+    });
+
     it('inverts individual scores in breakdown fields', () => {
         const r = report(10, 20, 30, 40, 50, 60, 70, 80);
         expect(r.ela).toBe(90);
@@ -66,6 +72,18 @@ describe('buildReport', () => {
         expect(r.resampling).toBe(40);
         expect(r.histogram).toBe(30);
         expect(r.docStructure).toBe(20);
+    });
+
+    it('exposes weighted signals and a readable summary', () => {
+        const r = report(0, 0, 0, 0, 100, 0, 0, 0);
+
+        expect(r.suspicionScore).toBe(21);
+        expect(r.confidence).toBeGreaterThanOrEqual(55);
+        expect(r.evidenceLevel).toBeDefined();
+        expect(r.signals?.[0].key).toBe('copyMove');
+        expect(r.signals?.[0].contribution).toBeCloseTo(20, 1);
+        expect(r.summary).toContain('Copy-Move');
+        expect(r.summary).toContain('indícios');
     });
 
     it('completedAt is a recent timestamp', () => {

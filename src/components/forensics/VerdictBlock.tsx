@@ -42,6 +42,13 @@ const WEIGHTS = [
     { key: 'mrz' as const, label: 'MRZ', weight: '×0.025' },
 ];
 
+function getSignalSeverity(contribution: number): 'Alta' | 'Média' | 'Baixa' | 'Residual' {
+    if (contribution >= 15) return 'Alta';
+    if (contribution >= 6) return 'Média';
+    if (contribution >= 2) return 'Baixa';
+    return 'Residual';
+}
+
 interface VerdictBlockProps {
     report: ForensicReport | null;
     isAnalyzing: boolean;
@@ -104,9 +111,30 @@ export function VerdictBlock({ report, isAnalyzing, progress }: VerdictBlockProp
             : report.verdict === 'suspicious'
               ? 'Suspeito'
               : 'Provável Adulteração';
+    const suspicionScore = report.suspicionScore ?? 100 - report.totalScore;
+    const confidence = report.confidence ?? 60;
+    const evidenceLevel = report.evidenceLevel ?? 'low';
+    const signals = report.signals ?? [];
+    const strongestSignal = signals[0] ?? null;
+    const strongestContribution = strongestSignal?.contribution ?? 0;
+    const evidenceLabel =
+        evidenceLevel === 'high' ? 'Alta' : evidenceLevel === 'moderate' ? 'Média' : 'Baixa';
 
     return (
         <div className="border-b border-border p-4">
+            <div className="mb-3 flex items-center justify-between">
+                <p className="font-syne text-[11px] font-bold uppercase tracking-[0.28em] text-text-3">
+                    Resumo executivo
+                </p>
+                <div className="flex items-center gap-2">
+                    <span className="rounded-full border border-border bg-bg-2 px-2 py-0.5 font-mono text-[11px] text-text-2">
+                        Confiança {confidence}%
+                    </span>
+                    <span className="rounded-full border border-border bg-bg-2 px-2 py-0.5 font-mono text-[11px] text-text-2">
+                        Evidência {evidenceLabel}
+                    </span>
+                </div>
+            </div>
             <div className="mb-4 flex items-start gap-4">
                 <ScoreRing score={report.totalScore} />
                 <div className="flex-1 pt-1">
@@ -116,6 +144,25 @@ export function VerdictBlock({ report, isAnalyzing, progress }: VerdictBlockProp
                     >
                         {verdictText}
                     </p>
+                    <div className="mb-3 grid grid-cols-2 gap-2 text-xs">
+                        <div className="rounded-sm border border-border bg-bg-2 px-2 py-1.5">
+                            <span className="block text-[11px] uppercase tracking-widest text-text-3">
+                                Suspeita agregada
+                            </span>
+                            <span className="font-mono text-text-2">{suspicionScore}/100</span>
+                        </div>
+                        <div className="rounded-sm border border-border bg-bg-2 px-2 py-1.5">
+                            <span className="block text-[11px] uppercase tracking-widest text-text-3">
+                                Sinal dominante
+                            </span>
+                            <span className="font-mono text-text-2">
+                                {strongestSignal ? strongestSignal.label : 'Nenhum'}
+                            </span>
+                        </div>
+                    </div>
+                    {report.summary && (
+                        <p className="mb-3 text-xs leading-relaxed text-text-3">{report.summary}</p>
+                    )}
                     <div className="flex flex-col gap-2">
                         {WEIGHTS.map(({ key, label, weight }) => {
                             const score = report[key];
@@ -143,6 +190,60 @@ export function VerdictBlock({ report, isAnalyzing, progress }: VerdictBlockProp
                         })}
                     </div>
                 </div>
+            </div>
+
+            <div className="mb-4 rounded-sm border border-border bg-bg-3/40 p-3">
+                <p className="mb-2 font-syne text-[11px] font-bold uppercase tracking-widest text-text-3">
+                    Tabela de evidências
+                </p>
+                <div className="flex flex-col gap-2">
+                    {signals.map((signal) => {
+                        const pct =
+                            strongestContribution > 0
+                                ? Math.max(
+                                      6,
+                                      Math.round(
+                                          (signal.contribution / strongestContribution) * 100,
+                                      ),
+                                  )
+                                : 0;
+                        return (
+                            <div
+                                key={signal.key}
+                                className="rounded-sm border border-border/60 bg-bg-2/40 p-2.5"
+                            >
+                                <div className="mb-2 flex items-center justify-between gap-2 text-xs">
+                                    <span className="text-text-2">{signal.label}</span>
+                                    <span className="font-mono text-text-3">
+                                        {signal.contribution.toFixed(1)} pts
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-[11px] text-text-3">
+                                    <span>Sinal: {signal.score}/100</span>
+                                    <span>Peso: ×{signal.weight.toFixed(3)}</span>
+                                    <span>
+                                        Severidade: {getSignalSeverity(signal.contribution)}
+                                    </span>
+                                    <span>Contribuição: {signal.contribution.toFixed(1)}</span>
+                                </div>
+                                <div className="mt-2 h-px overflow-hidden rounded-full bg-bg-3">
+                                    <div className="h-full bg-amber" style={{ width: `${pct}%` }} />
+                                </div>
+                                <p className="mt-2 text-[11px] leading-relaxed text-text-3">
+                                    {signal.detail}
+                                </p>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <div className="rounded-sm border border-border bg-bg-2 px-3 py-2 text-[11px] leading-relaxed text-text-3">
+                {report.verdict === 'authentic'
+                    ? 'Leitura operacional: os indícios não ultrapassaram o limiar de suspeita. Ainda assim, confirme com revisão visual quando o caso for sensível.'
+                    : report.verdict === 'suspicious'
+                      ? 'Leitura operacional: há sinais mistos. O caso merece revisão manual e comparação com a fonte original.'
+                      : 'Leitura operacional: múltiplos sinais convergem para adulteração. Trate o arquivo como contestado até validação externa.'}
             </div>
         </div>
     );

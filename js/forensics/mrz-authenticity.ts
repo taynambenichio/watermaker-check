@@ -301,7 +301,7 @@ function hasConsistentFormat(mrz: MrzResult): MrzAuthenticityCheck {
 
     return {
         name: 'Formato consistente',
-        description: 'MRZ segue formato TD1 ou TD3 padrão',
+        description: 'MRZ segue formato TD1, TD2 ou TD3 padrão',
         passed: isValid,
         severity: isValid ? 'info' : 'error',
     };
@@ -432,14 +432,16 @@ function validateDocumentNumber(mrz: MrzResult): MrzAuthenticityCheck {
 export function validateMrzAuthenticity(mrz: MrzResult): MrzAuthenticityResult {
     // If MRZ could not be detected or parsed, return neutral result (score 50)
     if (mrz.documentType === null) {
-        const notFound = mrz.errors.some((e) => e.includes('vazia') || e.includes('inválidos') || e.includes('não suportado'));
+        const notFound = mrz.errors.some(
+            (e) => e.includes('vazia') || e.includes('inválidos') || e.includes('não suportado'),
+        );
         return {
             authentic: false,
             notFound: true,
             suspicionScore: 50, // Neutral — absence of MRZ is not evidence of tampering
             checks: [],
             recommendation: notFound
-                ? 'MRZ não detectada — documento pode não ter zona MRZ, ou a leitura OCR falhou.'
+                ? 'MRZ não detectada — leitura inconclusiva; isso não indica falsificação por si só.'
                 : 'MRZ incompleta — formato não reconhecido.',
         };
     }

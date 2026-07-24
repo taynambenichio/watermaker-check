@@ -22,7 +22,9 @@ export default function App() {
         [],
     );
 
-    const { loadFile, loadUrl } = useImageLoader(handleImageLoaded);
+    const { loadFile, loadUrl } = useImageLoader(handleImageLoaded, (message) =>
+        dispatch({ type: 'LOAD_ERROR', message }),
+    );
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: auto-analyze only when a new image loads; broader deps can retrigger after analysis errors
     useEffect(() => {
@@ -30,6 +32,12 @@ export default function App() {
             analyze(state.imageElement, state.sourceFile);
         }
     }, [state.imageElement]);
+
+    useEffect(() => {
+        return () => {
+            if (state.objectUrl) URL.revokeObjectURL(state.objectUrl);
+        };
+    }, [state.objectUrl]);
 
     const handleReanalyze = useCallback(() => {
         if (state.imageElement) analyze(state.imageElement, state.sourceFile);
@@ -40,6 +48,7 @@ export default function App() {
     const handleFileInputChange = useCallback(
         (e: ChangeEvent<HTMLInputElement>) => {
             const file = e.target.files?.[0];
+            e.target.value = '';
             if (file) {
                 void loadFile(file).catch((error) => {
                     console.error('[App] Failed to load selected file:', error);

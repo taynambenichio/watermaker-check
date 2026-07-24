@@ -3,6 +3,9 @@ import { type MrzResult, parseMrz } from './mrz.js';
 export interface MrzOcrResult {
     rawText: string;
     parsed: MrzResult;
+    preprocess: 'normal' | 'negative';
+    region: 'full' | 'bottom';
+    confidence: number;
 }
 
 export interface MrzOcrProgress {
@@ -25,7 +28,10 @@ async function getWorker(onProgress?: (progress: MrzOcrProgress) => void) {
         workerReady = (async () => {
             cachedWorker = await createWorker('eng', 1, {
                 logger: (message) => {
-                    currentProgressCallback?.({ status: message.status, progress: message.progress });
+                    currentProgressCallback?.({
+                        status: message.status,
+                        progress: message.progress,
+                    });
                 },
             });
         })();
@@ -35,43 +41,123 @@ async function getWorker(onProgress?: (progress: MrzOcrProgress) => void) {
     return cachedWorker!;
 }
 
-/**
- * Scan the full image without positional crop.
- * Photos taken on a surface may have the document anywhere in the frame.
- */
-function buildMrzCanvas(img: HTMLImageElement): HTMLCanvasElement {
+type MrzRegion = 'full' | 'bottom';
+
+type MrzCanvasOptions = {
+    invert: boolean;
+    region: MrzRegion;
+    threshold: boolean;
+};
+
+function buildMrzCanvas(img: HTMLImageElement, options: MrzCanvasOptions): HTMLCanvasElement {
     const sourceW = img.naturalWidth;
     const sourceH = img.naturalHeight;
     const targetW = Math.min(2400, Math.max(sourceW, 1600));
     const scale = targetW / sourceW;
+    const cropY = options.region === 'bottom' ? Math.floor(sourceH * 0.72) : 0;
+    const cropH = options.region === 'bottom' ? Math.max(1, sourceH - cropY) : sourceH;
 
     const canvas = document.createElement('canvas');
+    canvas.dataset.mrzPreprocess = options.invert ? 'negative' : 'normal';
+    canvas.dataset.mrzRegion = options.region;
+    canvas.dataset.mrzThreshold = options.threshold ? 'adaptive' : 'contrast';
     canvas.width = Math.round(sourceW * scale);
-    canvas.height = Math.round(sourceH * scale);
+    canvas.height = Math.round(cropH * scale);
 
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('MRZ OCR: canvas context unavailable');
 
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(img, 0, 0, sourceW, sourceH, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, cropY, sourceW, cropH, 0, 0, canvas.width, canvas.height);
 
     // Grayscale + contrast for OCR-B font legibility.
-    // No inversion: browser Tesseract.js WASM misreads digits as letters under inversion
-    // (e.g. 9→I, 4→I, 0→S, 2→U) even though CLI handles it fine. Dark chars on light
-    // background work well with higher contrast (1.5×).
+    // When `invert` is enabled, we invert the luminance after boosting contrast.
+    // Bottom-crop and threshold passes help when the MRZ sits in shadow or the
+    // OCR is distracted by the rest of the document.
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const { data } = imageData;
+    const tones = options.threshold ? new Uint8ClampedArray(data.length / 4) : null;
+    let toneSum = 0;
     for (let i = 0; i < data.length; i += 4) {
         const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-        const contrasted = Math.max(0, Math.min(255, (lum - 128) * 1.5 + 128));
-        data[i] = contrasted;
-        data[i + 1] = contrasted;
-        data[i + 2] = contrasted;
+        const contrasted = Math.max(0, Math.min(255, (lum - 128) * 1.8 + 128));
+        const tone = options.invert ? 255 - contrasted : contrasted;
+        if (tones) {
+            tones[i / 4] = tone;
+            toneSum += tone;
+        }
+        data[i] = tone;
+        data[i + 1] = tone;
+        data[i + 2] = tone;
+    }
+    if (tones) {
+        const threshold = Math.max(
+            92,
+            Math.min(182, toneSum / tones.length + (options.invert ? -4 : 4)),
+        );
+        for (let i = 0; i < tones.length; i++) {
+            const tone = tones[i] >= threshold ? 255 : 0;
+            const base = i * 4;
+            data[base] = tone;
+            data[base + 1] = tone;
+            data[base + 2] = tone;
+        }
     }
     ctx.putImageData(imageData, 0, 0);
 
     return canvas;
+}
+
+function scoreRecognizedMrz(rawText: string, parsed: MrzResult, confidence: number): number {
+    let score = Math.round(confidence);
+
+    if (parsed.valid) {
+        score += 100;
+    } else {
+        score -= parsed.errors.length * 20;
+    }
+
+    if (
+        parsed.documentType === 'TD1' ||
+        parsed.documentType === 'TD2' ||
+        parsed.documentType === 'TD3'
+    ) {
+        score += 20;
+    }
+
+    score += parsed.checks.filter((check) => check.valid).length * 8;
+    score += rawText.includes('<<') ? 5 : 0;
+    score += parsed.normalizedLines.some((line) => /[0-9]/.test(line)) ? 5 : 0;
+
+    return Math.max(0, score);
+}
+
+async function runOcrPass(
+    worker: Awaited<ReturnType<typeof import('tesseract.js').createWorker>>,
+    canvas: HTMLCanvasElement,
+    sparseText = true,
+): Promise<{ rawText: string; parsed: MrzResult; score: number; confidence: number }> {
+    const { PSM } = await import('tesseract.js');
+    await worker.setParameters({
+        tessedit_pageseg_mode: sparseText ? PSM.SPARSE_TEXT : PSM.SINGLE_BLOCK,
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<',
+        preserve_interword_spaces: '0',
+        user_defined_dpi: '300',
+    });
+
+    const {
+        data: { text, confidence = 0 },
+    } = await worker.recognize(canvas);
+    const mrzText = sparseText ? extractMrzLines(text) : extractMrzLines(text);
+    const normalized = normalizeMrzDigitPositions(mrzText);
+    const parsed = parseMrz(normalized);
+    return {
+        rawText: normalized,
+        parsed,
+        score: scoreRecognizedMrz(normalized, parsed, confidence),
+        confidence,
+    };
 }
 
 /**
@@ -84,8 +170,8 @@ function fixOcrBMisreadings(line: string): string {
     for (let i = 0; i < 3; i++) {
         result = result
             .replace(/[KC]{2,}/g, (m) => '<'.repeat(m.length)) // KKK+ / CCC+ → <<<
-            .replace(/<[KC]/g, '<<')                             // <K or <C → <<
-            .replace(/[KC]</g, '<<');                            // K< or C< → <<
+            .replace(/<[KC]/g, '<<') // <K or <C → <<
+            .replace(/[KC]</g, '<<'); // K< or C< → <<
     }
     // Trailing K/C chars (end padding zone)
     result = result.replace(/[KC]+$/, (m) => '<'.repeat(m.length));
@@ -121,7 +207,7 @@ function trimToLength(line: string, target: number): string {
     while (l.length > target) {
         const m = l.match(/<{3,}(?=[A-Z0-9])/);
         if (!m || m.index === undefined) break;
-        l = l.slice(0, m.index) + '<<' + l.slice(m.index + m[0].length);
+        l = `${l.slice(0, m.index)}<<${l.slice(m.index + m[0].length)}`;
     }
     if (l.length <= target) return l.padEnd(target, '<');
 
@@ -154,7 +240,9 @@ function trimToLength(line: string, target: number): string {
  */
 function scoreCandidateWindow(line: string): number {
     if (/^<+$/.test(line)) return 0;
-    let digits = 0, lt = 0, letters = 0;
+    let digits = 0,
+        lt = 0,
+        letters = 0;
     for (let i = 0; i < line.length; i++) {
         const c = line.charCodeAt(i);
         if (c >= 48 && c <= 57) digits++;
@@ -199,8 +287,9 @@ function scoreMrzLikeness(line: string): number {
     let lt = 0;
     for (let i = 0; i < line.length; i++) {
         const c = line.charCodeAt(i);
-        if (c >= 48 && c <= 57) digits++;        // 0-9
-        else if (c === 60) lt++;                  // '<'
+        if (c >= 48 && c <= 57)
+            digits++; // 0-9
+        else if (c === 60) lt++; // '<'
     }
     // Bonus for runs of '<<' which are a strong MRZ filler signal
     const fillerBonus = /<<+/.test(line) ? 0.1 : 0;
@@ -243,7 +332,12 @@ function extractMrzLines(rawText: string): string {
             ({ line, score }) =>
                 line.length >= minLen && line.length <= maxLen && score >= minScore,
         );
-        let best: { a: typeof cands[0]; b: typeof cands[0]; c: typeof cands[0]; total: number } | null = null;
+        let best: {
+            a: (typeof cands)[0];
+            b: (typeof cands)[0];
+            c: (typeof cands)[0];
+            total: number;
+        } | null = null;
         for (let i = 0; i < cands.length - 2; i++) {
             for (let j = i + 1; j < cands.length - 1; j++) {
                 if (cands[j].idx - cands[i].idx > MAX_GAP) break;
@@ -266,7 +360,7 @@ function extractMrzLines(rawText: string): string {
             ({ line, score }) =>
                 line.length >= minLen && line.length <= maxLen && score >= minScore,
         );
-        let best: { a: typeof cands[0]; b: typeof cands[0]; total: number } | null = null;
+        let best: { a: (typeof cands)[0]; b: (typeof cands)[0]; total: number } | null = null;
         for (let i = 0; i < cands.length - 1; i++) {
             for (let j = i + 1; j < cands.length; j++) {
                 if (cands[j].idx - cands[i].idx > MAX_GAP) break;
@@ -281,17 +375,38 @@ function extractMrzLines(rawText: string): string {
         return `${fix(best.a.line)}\n${fix(best.b.line)}`;
     }
 
+    function searchTD2(minLen: number, maxLen: number, minScore: number): string | null {
+        const cands = indexed.filter(
+            ({ line, score }) =>
+                line.length >= minLen && line.length <= maxLen && score >= minScore,
+        );
+        let best: { a: (typeof cands)[0]; b: (typeof cands)[0]; total: number } | null = null;
+        for (let i = 0; i < cands.length - 1; i++) {
+            for (let j = i + 1; j < cands.length; j++) {
+                if (cands[j].idx - cands[i].idx > MAX_GAP) break;
+                const total = cands[i].score + cands[j].score;
+                if (!best || total > best.total) {
+                    best = { a: cands[i], b: cands[j], total };
+                }
+            }
+        }
+        if (!best) return null;
+        const fix = (l: string) => trimToLength(l, 36);
+        return `${fix(best.a.line)}\n${fix(best.b.line)}`;
+    }
+
     // Strict ranges & high score first; loosen progressively.
     // Upper bound generous on TD1 to admit lines like 'RAMON<<<<STALMANS<<...'
     // (41 chars) where OCR inserted extra '<' between name parts — trimToLength
     // collapses these to canonical 30.
     return (
         searchTD1(26, 34, MIN_SCORE) ??
+        searchTD2(34, 38, MIN_SCORE) ??
         searchTD3(40, 48, MIN_SCORE) ??
-        searchTD1(22, 45, MIN_SCORE) ??   // loose TD1 (distorted/expanded scans)
-        searchTD3(36, 55, MIN_SCORE) ??   // loose TD3
-        searchTD1(22, 45, 0.15) ??         // last-resort low score (mostly-garbled OCR)
-        rawText
+        searchTD1(22, 45, MIN_SCORE) ?? // loose TD1 (distorted/expanded scans)
+        searchTD2(32, 42, MIN_SCORE) ?? // loose TD2
+        searchTD3(36, 55, MIN_SCORE) ?? // loose TD3
+        ''
     );
 }
 
@@ -299,47 +414,72 @@ export async function recognizeMrzFromImage(
     img: HTMLImageElement,
     onProgress?: (progress: MrzOcrProgress) => void,
 ): Promise<MrzOcrResult> {
-    const canvas = buildMrzCanvas(img);
     const worker = await getWorker(onProgress);
+    const passes = [
+        {
+            canvas: buildMrzCanvas(img, { invert: false, region: 'bottom', threshold: false }),
+            preprocess: 'normal' as const,
+            region: 'bottom' as const,
+        },
+        {
+            canvas: buildMrzCanvas(img, { invert: true, region: 'bottom', threshold: false }),
+            preprocess: 'negative' as const,
+            region: 'bottom' as const,
+        },
+        {
+            canvas: buildMrzCanvas(img, { invert: false, region: 'full', threshold: false }),
+            preprocess: 'normal' as const,
+            region: 'full' as const,
+        },
+        {
+            canvas: buildMrzCanvas(img, { invert: true, region: 'full', threshold: false }),
+            preprocess: 'negative' as const,
+            region: 'full' as const,
+        },
+    ];
 
-    const { PSM } = await import('tesseract.js');
-    await worker.setParameters({
-        tessedit_pageseg_mode: PSM.SPARSE_TEXT,
-        // No char whitelist — whitelist corrupts OCR on full photos by forcing background/normal
-        // text to be interpreted as MRZ chars. Filtering is done in extractMrzLines() instead.
-        // preserve_interword_spaces omitted: can cause Tesseract to split MRZ lines at '<' runs
-    });
+    let best: (MrzOcrResult & { score: number }) | null = null;
 
-    const {
-        data: { text: textSparse },
-    } = await worker.recognize(canvas);
+    for (const { canvas, preprocess, region } of passes) {
+        const block = await runOcrPass(worker, canvas, false);
+        let candidate = { ...block, preprocess, region };
 
-    let mrzText = extractMrzLines(textSparse);
-    let extracted = mrzText !== textSparse;
-    let textBlock = '';
+        if (!candidate.parsed.valid) {
+            const sparse = await runOcrPass(worker, canvas, true);
+            if (sparse.score > candidate.score) {
+                candidate = { ...sparse, preprocess, region };
+            }
+        }
 
-    // If first pass found nothing, try SINGLE_BLOCK mode and combine outputs
-    if (!extracted) {
-        await worker.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_BLOCK });
-        const { data: { text: t2 } } = await worker.recognize(canvas);
-        textBlock = t2;
-        const mrzText2 = extractMrzLines(t2);
-        if (mrzText2 !== t2) {
-            mrzText = mrzText2;
-            extracted = true;
+        if (!best || candidate.score > best.score) {
+            best = candidate;
+        }
+
+        if (candidate.parsed.valid && candidate.confidence >= 85) {
+            best = candidate;
+            break;
+        }
+
+        if (candidate.parsed.valid && candidate.score >= 180) {
+            best = candidate;
+            break;
         }
     }
 
-    // When extraction fails, expose BOTH raw OCR outputs so the user can
-    // diagnose what Tesseract.js actually produced (visible in "Texto Bruto OCR")
-    if (!extracted) {
-        mrzText = `--- PSM SPARSE_TEXT ---\n${textSparse}\n--- PSM SINGLE_BLOCK ---\n${textBlock}`;
-    } else {
-        mrzText = normalizeMrzDigitPositions(mrzText);
+    if (!best) {
+        throw new Error('MRZ OCR: unable to process image');
     }
 
+    const parsed = best.parsed.valid || best.confidence >= 85 ? best.parsed : parseMrz('');
+
     onProgress?.({ status: 'done', progress: 1 });
-    return { rawText: mrzText, parsed: parseMrz(mrzText) };
+    return {
+        rawText: best.rawText,
+        parsed,
+        preprocess: best.preprocess,
+        region: best.region,
+        confidence: best.confidence,
+    };
 }
 
 /**
@@ -354,14 +494,33 @@ export async function recognizeMrzFromImage(
  * are alphanumeric and left untouched. Names are letters-only and untouched.
  */
 const LETTER_TO_DIGIT: Record<string, string> = {
-    O: '0', D: '0', Q: '0',
-    I: '1', L: '1',
+    O: '0',
+    D: '0',
+    Q: '0',
+    I: '1',
+    L: '1',
     Z: '2',
     A: '4',
     S: '5',
     G: '6',
     T: '7',
     B: '8',
+};
+
+const NUMERIC_OCR_CANDIDATES: Record<string, string[]> = {
+    O: ['0'],
+    D: ['0'],
+    Q: ['0'],
+    I: ['1', '9'],
+    L: ['1', '9'],
+    Z: ['2'],
+    A: ['4'],
+    S: ['5', '9'],
+    G: ['6'],
+    T: ['7'],
+    B: ['8'],
+    '1': ['1', '9'],
+    '7': ['7', '9'],
 };
 
 function fixDigitsIn(line: string, ranges: ReadonlyArray<readonly [number, number]>): string {
@@ -375,6 +534,63 @@ function fixDigitsIn(line: string, ranges: ReadonlyArray<readonly [number, numbe
     return chars.join('');
 }
 
+function repairCheckDigitField(
+    chars: string[],
+    dataStart: number,
+    dataEnd: number,
+    checkPos: number,
+) {
+    if (checkPos >= chars.length) return;
+    const current = chars.slice(dataStart, dataEnd).join('');
+    const actual = LETTER_TO_DIGIT[chars[checkPos]] ?? chars[checkPos];
+    if (/^\d+$/.test(current) && actual === parseMrzCheckDigit(current)) {
+        chars[checkPos] = actual;
+        return;
+    }
+
+    const candidateSets = chars.slice(dataStart, dataEnd).map((char) => {
+        const mapped = LETTER_TO_DIGIT[char];
+        const base = mapped ?? char;
+        const candidates = NUMERIC_OCR_CANDIDATES[char] ?? [base];
+        return [...new Set(candidates.filter((candidate) => /^\d$/.test(candidate)))];
+    });
+
+    const tryRepair = (index: number, built: string[]): boolean => {
+        if (index === candidateSets.length) {
+            const candidate = built.join('');
+            if (parseMrzCheckDigit(candidate) !== actual) return false;
+            for (let i = dataStart; i < dataEnd; i++) {
+                chars[i] = built[i - dataStart];
+            }
+            chars[checkPos] = actual;
+            return true;
+        }
+
+        for (const candidate of candidateSets[index]) {
+            if (tryRepair(index + 1, [...built, candidate])) return true;
+        }
+        return false;
+    };
+
+    tryRepair(0, []);
+}
+
+function parseMrzCheckDigit(input: string): string {
+    const weights = [7, 3, 1] as const;
+    let sum = 0;
+    for (let i = 0; i < input.length; i++) {
+        const char = input[i];
+        const value =
+            char === '<'
+                ? 0
+                : char >= '0' && char <= '9'
+                  ? char.charCodeAt(0) - 48
+                  : char.charCodeAt(0) - 55;
+        sum += value * weights[i % weights.length];
+    }
+    return String(sum % 10);
+}
+
 function normalizeMrzDigitPositions(mrzText: string): string {
     const lines = mrzText.split('\n');
 
@@ -383,7 +599,14 @@ function normalizeMrzDigitPositions(mrzText: string): string {
         // Line 1: doc-number check digit at pos 14
         const l1 = fixDigitsIn(lines[0], [[14, 15]]);
         // Line 2: birth (0-5) + check (6), expiry (8-13) + check (14), composite check (29)
-        const l2 = fixDigitsIn(lines[1], [[0, 7], [8, 15], [29, 30]]);
+        const l2Chars = fixDigitsIn(lines[1], [
+            [0, 7],
+            [8, 15],
+            [29, 30],
+        ]).split('');
+        repairCheckDigitField(l2Chars, 0, 6, 6);
+        repairCheckDigitField(l2Chars, 8, 14, 14);
+        const l2 = l2Chars.join('');
         return `${l1}\n${l2}\n${lines[2]}`;
     }
 
@@ -391,7 +614,29 @@ function normalizeMrzDigitPositions(mrzText: string): string {
     if (lines.length === 2 && lines.every((l) => l.length === 44)) {
         // Line 2: doc# check (9), birth (13-18) + check (19), expiry (21-26) + check (27),
         // optional check (42), composite check (43)
-        const l2 = fixDigitsIn(lines[1], [[9, 10], [13, 20], [21, 28], [42, 44]]);
+        const l2Chars = fixDigitsIn(lines[1], [
+            [9, 10],
+            [13, 20],
+            [21, 28],
+            [42, 44],
+        ]).split('');
+        repairCheckDigitField(l2Chars, 13, 19, 19);
+        repairCheckDigitField(l2Chars, 21, 27, 27);
+        const l2 = l2Chars.join('');
+        return `${lines[0]}\n${l2}`;
+    }
+
+    // TD2: 2 lines × 36 chars
+    if (lines.length === 2 && lines.every((l) => l.length === 36)) {
+        const l2Chars = fixDigitsIn(lines[1], [
+            [9, 10],
+            [13, 20],
+            [21, 28],
+            [35, 36],
+        ]).split('');
+        repairCheckDigitField(l2Chars, 13, 19, 19);
+        repairCheckDigitField(l2Chars, 21, 27, 27);
+        const l2 = l2Chars.join('');
         return `${lines[0]}\n${l2}`;
     }
 
@@ -401,7 +646,10 @@ function normalizeMrzDigitPositions(mrzText: string): string {
 /** Call this to release the cached worker (e.g. on app teardown) */
 export async function terminateMrzWorker(): Promise<void> {
     if (cachedWorker) {
-        await cachedWorker.terminate();
+        const terminator = (cachedWorker as { terminate?: () => Promise<void> }).terminate;
+        if (terminator) {
+            await terminator.call(cachedWorker);
+        }
         cachedWorker = null;
         workerReady = null;
     }

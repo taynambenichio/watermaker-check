@@ -1,4 +1,4 @@
-export type MrzDocumentType = 'TD1' | 'TD3';
+export type MrzDocumentType = 'TD1' | 'TD2' | 'TD3';
 
 export interface MrzCheck {
     label: string;
@@ -144,6 +144,38 @@ function parseTD3(lines: string[]): MrzResult {
     return result;
 }
 
+function parseTD2(lines: string[]): MrzResult {
+    const result = baseResult(lines);
+    result.documentType = 'TD2';
+    const [line1, line2] = lines;
+
+    const names = parseNames(line1.slice(5));
+    result.fields = {
+        documentCode: cleanField(line1.slice(0, 2)),
+        issuingState: cleanField(line1.slice(2, 5)),
+        documentNumber: cleanDocumentNumber(line2.slice(0, 9)),
+        nationality: cleanField(line2.slice(10, 13)),
+        birthDate: line2.slice(13, 19),
+        sex: cleanField(line2.slice(20, 21)),
+        expiryDate: line2.slice(21, 27),
+        surname: names.surname,
+        givenNames: names.givenNames,
+    };
+
+    addCheck(result.checks, 'Número do documento', line2.slice(0, 9), line2[9]);
+    addCheck(result.checks, 'Data de nascimento', line2.slice(13, 19), line2[19]);
+    addCheck(result.checks, 'Data de validade', line2.slice(21, 27), line2[27]);
+    addCheck(
+        result.checks,
+        'Composto',
+        line2.slice(0, 10) + line2.slice(13, 20) + line2.slice(21, 35),
+        line2[35],
+    );
+
+    result.valid = result.checks.every((check) => check.valid);
+    return result;
+}
+
 function parseTD1(lines: string[]): MrzResult {
     const result = baseResult(lines);
     result.documentType = 'TD1';
@@ -192,6 +224,10 @@ export function parseMrz(text: string): MrzResult {
 
     if (lines.length === 2 && lines.every((line) => line.length === 44)) {
         return parseTD3(lines);
+    }
+
+    if (lines.length === 2 && lines.every((line) => line.length === 36)) {
+        return parseTD2(lines);
     }
 
     if (lines.length === 3 && lines.every((line) => line.length === 30)) {

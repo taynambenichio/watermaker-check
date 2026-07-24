@@ -25,40 +25,54 @@ interface MrzModuleProps {
     imageElement: HTMLImageElement | null;
 }
 
+export function getMrzValidationState(
+    hasInput: boolean,
+    authenticity: ReturnType<typeof validateMrzAuthenticity>,
+) {
+    if (!hasInput) {
+        return { statusColor: COLOR_WARN, statusText: 'A aguardar MRZ' };
+    }
+
+    if (authenticity.notFound) {
+        return { statusColor: COLOR_WARN, statusText: 'Leitura inconclusiva' };
+    }
+
+    if (authenticity.authentic) {
+        return { statusColor: COLOR_OK, statusText: 'Autêntica ✓' };
+    }
+
+    return {
+        statusColor: COLOR_BAD,
+        statusText: `Suspeita (${authenticity.suspicionScore}%)`,
+    };
+}
+
 export function MrzModule({ imageElement }: MrzModuleProps) {
     const [text, setText] = useState('');
     const [isReading, setIsReading] = useState(false);
     const [ocrStatus, setOcrStatus] = useState<string | null>(null);
     const [ocrError, setOcrError] = useState<string | null>(null);
+    const [preprocessMode, setPreprocessMode] = useState<'normal' | 'negative' | null>(null);
+    const [ocrRegion, setOcrRegion] = useState<'full' | 'bottom' | null>(null);
     const result = useMemo(() => parseMrz(text), [text]);
     const authenticity = useMemo(() => validateMrzAuthenticity(result), [result]);
     const hasInput = text.trim().length > 0;
     const mrzFound = result.documentType !== null;
-    // Three states: waiting | not-found (OCR ran, no MRZ) | found (show validation)
-    const statusColor = !hasInput
-        ? COLOR_WARN
-        : !mrzFound
-          ? COLOR_WARN
-          : authenticity.authentic
-            ? COLOR_OK
-            : COLOR_BAD;
-    const statusText = !hasInput
-        ? 'A aguardar MRZ'
-        : !mrzFound
-          ? 'Não detectada'
-          : authenticity.authentic
-            ? 'Autêntica ✓'
-            : `Suspeita (${authenticity.suspicionScore}%)`;
+    const { statusColor, statusText } = getMrzValidationState(hasInput, authenticity);
 
     const runOcr = useCallback((imageEl: HTMLImageElement) => {
         setIsReading(true);
         setOcrError(null);
         setOcrStatus('Extraindo MRZ...');
+        setPreprocessMode(null);
+        setOcrRegion(null);
         void recognizeMrzFromImage(imageEl, ({ status, progress }) => {
             setOcrStatus(`${status} ${Math.round(progress * 100)}%`);
         })
-            .then(({ rawText }) => {
+            .then(({ rawText, preprocess, region }) => {
                 setText(rawText);
+                setPreprocessMode(preprocess);
+                setOcrRegion(region);
                 setOcrStatus(null);
             })
             .catch((error: unknown) => {
@@ -100,6 +114,14 @@ export function MrzModule({ imageElement }: MrzModuleProps) {
             </button>
 
             {ocrStatus && <p className="font-mono text-xs text-amber">{ocrStatus}</p>}
+            {preprocessMode && (
+                <div className="rounded-sm border border-amber/40 bg-amber-dim px-2 py-1.5 text-xs text-amber">
+                    Leitura MRZ reforçada com efeito{' '}
+                    {preprocessMode === 'negative' ? 'negativo' : 'normal'}{' '}
+                    {ocrRegion === 'bottom' ? 'na faixa inferior' : 'na imagem inteira'} para
+                    destacar a zona.
+                </div>
+            )}
             {ocrError && (
                 <div className="rounded-sm border border-red/40 bg-red-dim px-2 py-1.5 text-xs text-red">
                     OCR falhou: {ocrError}

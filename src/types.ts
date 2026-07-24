@@ -45,6 +45,7 @@ export interface AppState {
     imageElement: HTMLImageElement | null;
     sourceFile: File | null;
     objectUrl: string | null;
+    loadError: string | null;
     isAnalyzing: boolean;
     progress: Partial<Record<PipelineStep, 'running' | 'done' | 'error'>>;
     forensicResult: ForensicPipelineResult | null;
@@ -62,6 +63,7 @@ export const initialAppState: AppState = {
     imageElement: null,
     sourceFile: null,
     objectUrl: null,
+    loadError: null,
     isAnalyzing: false,
     progress: {},
     forensicResult: null,
@@ -70,13 +72,14 @@ export const initialAppState: AppState = {
     canvasMode: null,
     beforeAfterActive: false,
     zoom: 1,
-    filters: DEFAULT_FILTERS,
+    filters: { ...DEFAULT_FILTERS },
     elaAmplification: 10,
     elaScore: null,
 };
 
 export type AppAction =
     | { type: 'IMAGE_LOADED'; imageElement: HTMLImageElement; sourceFile: File; objectUrl: string }
+    | { type: 'LOAD_ERROR'; message: string }
     | { type: 'ANALYSIS_STARTED' }
     | { type: 'STEP_PROGRESS'; step: PipelineStep; status: 'running' | 'done' | 'error' }
     | { type: 'ANALYSIS_DONE'; result: ForensicPipelineResult }
@@ -96,7 +99,6 @@ export type AppAction =
 export function appReducer(state: AppState, action: AppAction): AppState {
     switch (action.type) {
         case 'IMAGE_LOADED':
-            if (state.objectUrl) URL.revokeObjectURL(state.objectUrl);
             return {
                 ...initialAppState,
                 activeTab: state.activeTab,
@@ -104,8 +106,16 @@ export function appReducer(state: AppState, action: AppAction): AppState {
                 sourceFile: action.sourceFile,
                 objectUrl: action.objectUrl,
             };
+        case 'LOAD_ERROR':
+            return { ...state, loadError: action.message, isAnalyzing: false, progress: {} };
         case 'ANALYSIS_STARTED':
-            return { ...state, isAnalyzing: true, progress: {}, forensicResult: null };
+            return {
+                ...state,
+                isAnalyzing: true,
+                progress: {},
+                forensicResult: null,
+                loadError: null,
+            };
         case 'STEP_PROGRESS':
             return { ...state, progress: { ...state.progress, [action.step]: action.status } };
         case 'ANALYSIS_DONE':
@@ -148,7 +158,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         case 'SET_PRESET':
             return { ...state, filters: { ...action.values, preset: action.preset } };
         case 'RESET_FILTERS':
-            return { ...state, filters: DEFAULT_FILTERS };
+            return { ...state, filters: { ...DEFAULT_FILTERS } };
         case 'SET_ELA_AMP':
             return { ...state, elaAmplification: action.value };
         case 'SET_ELA_SCORE':

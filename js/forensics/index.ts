@@ -102,14 +102,17 @@ export async function runForensicPipeline(
         ]);
 
     // Phase 3 (continued): MRZ OCR + parsing
+    onProgress?.('mrz', 'running');
     let mrzResult = null;
     if (img) {
         try {
             const ocrResult = await recognizeMrzFromImage(img);
             mrzResult = ocrResult.parsed;
+            onProgress?.('mrz', 'done');
         } catch (error) {
             console.warn('[Pipeline] MRZ OCR failed:', error);
             mrzResult = parseMrz(''); // Returns invalid result
+            onProgress?.('mrz', 'error');
         }
     }
 

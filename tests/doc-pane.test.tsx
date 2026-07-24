@@ -25,6 +25,27 @@ describe('DocPane', () => {
         expect(html).toContain('type="file"');
     });
 
+    it('mostra erro de upload quando a conversão falha', () => {
+        const html = renderToStaticMarkup(
+            <DocPane
+                state={{
+                    ...initialAppState,
+                    loadError: 'Não foi possível processar arquivos HEIC neste navegador.',
+                }}
+                dispatch={() => {}}
+                imageRef={{ current: null }}
+                overlayCanvasRef={{ current: null }}
+                onFileDrop={async () => {}}
+                onSampleLoad={() => {}}
+                onFileSelect={() => {}}
+                fileInputRef={{ current: null }}
+                onFileInputChange={() => {}}
+            />,
+        );
+
+        expect(html).toContain('Não foi possível processar arquivos HEIC neste navegador.');
+    });
+
     it('mostra metadados da imagem carregada', () => {
         const imageElement = {
             src: 'example.png',

@@ -125,6 +125,33 @@ describe('ForensicsContent', () => {
     });
 
     it('renders verdict and module cards when a forensic result exists', () => {
+        const signals = [
+            {
+                key: 'copyMove' as const,
+                label: 'Copy-Move',
+                score: 100,
+                weight: 0.2,
+                contribution: 20,
+                detail: 'Copy-Move contribuiu com 20 pontos de suspeita.',
+            },
+            {
+                key: 'ela' as const,
+                label: 'ELA',
+                score: 81,
+                weight: 0.15,
+                contribution: 12.15,
+                detail: 'ELA contribuiu com 12.2 pontos de suspeita.',
+            },
+            {
+                key: 'ghost' as const,
+                label: 'Ghost JPEG',
+                score: 67,
+                weight: 0.15,
+                contribution: 10.05,
+                detail: 'Ghost JPEG contribuiu com 10.1 pontos de suspeita.',
+            },
+        ];
+
         const html = renderToStaticMarkup(
             <ForensicsContent
                 state={{
@@ -200,7 +227,10 @@ describe('ForensicsContent', () => {
                         },
                         report: {
                             totalScore: 39,
+                            suspicionScore: 61,
                             verdict: 'tampered',
+                            summary: 'Suspeita forte concentrada em Copy-Move, ELA e Ghost JPEG.',
+                            signals,
                             ela: 19,
                             exif: 50,
                             noise: 58,
@@ -220,7 +250,13 @@ describe('ForensicsContent', () => {
         );
 
         expect(html).toContain('Provável Adulteração');
+        expect(html).toContain('Resumo executivo');
         expect(html).toContain('Score 39 de 100');
+        expect(html).toContain('Confiança');
+        expect(html).toContain('Tabela de evidências');
+        expect(html).toContain('Suspeita agregada');
+        expect(html).toContain('Suspeita forte concentrada em Copy-Move');
+        expect(html).toContain('Sinal dominante');
         expect(html).toContain('Metadados EXIF');
         expect(html).toContain('Inconsistência de Ruído');
         expect(html).toContain('JPEG Ghost');

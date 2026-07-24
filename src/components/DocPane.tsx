@@ -43,7 +43,7 @@ export function DocPane({
     const [isDragOver, setIsDragOver] = useState(false);
     const [dividerPct, setDividerPct] = useState(50);
     const draggingRef = useRef(false);
-    const { imageElement, zoom, filters, beforeAfterActive } = state;
+    const { imageElement, zoom, filters, beforeAfterActive, loadError } = state;
 
     // Apply CSS filter to image
     useEffect(() => {
@@ -189,6 +189,11 @@ export function DocPane({
                         <p className="font-syne font-bold text-text-3 text-sm tracking-wide uppercase">
                             Arraste um documento ou
                         </p>
+                        {loadError && (
+                            <div className="max-w-[320px] rounded-sm border border-red/40 bg-red/10 px-3 py-2 text-center text-xs leading-relaxed text-red">
+                                {loadError}
+                            </div>
+                        )}
                         <div className="flex gap-2">
                             <button
                                 type="button"
